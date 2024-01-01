@@ -1,0 +1,4 @@
+C:/Users/Anti filter=lfs diff=lfs merge=lfs -text
+coding filter=lfs diff=lfs merge=lfs -text
+club/Desktop/Emotion_Detection_CNN-main filter=lfs diff=lfs merge=lfs -text
+.h5 filter=lfs diff=lfs merge=lfs -text
