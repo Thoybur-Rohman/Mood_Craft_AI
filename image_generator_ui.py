@@ -17,6 +17,9 @@ import requests
 from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
+from pymongo import MongoClient
+import gridfs
+import base64
 
 # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_appearance_mode("System")
@@ -159,14 +162,15 @@ class ImageGeneratorUI(customtkinter.CTk):
         category = f"{user_prompt} emotion"
         self.app.camera_handler.display_image(category)
 
-    def generate_display_image_Deep_AI(self):
+    def generate_display_image_Deep_AI(self,emotion):
+        category = emotion
         api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MDM5OTMwMTUsInVzZXJfaWQiOiI2NTkwZGViMzBjNWYzNWIzMThjOTI5NDYifQ.UPTjRrFnubgH9oiMwpTITMky_eG8vdnRnOUgtoKUkKs"  # Replace with your actual API key
 
         url1 = "https://api.wizmodel.com/sdapi/v1/txt2img"
 
         payload = json.dumps({
-            "prompt": self.entry.get(),
-            "steps": 100
+            "prompt": category,
+            "steps": 200
         })
 
         headers = {
@@ -179,23 +183,44 @@ class ImageGeneratorUI(customtkinter.CTk):
         image_list = data.get("images", [])
         print(image_list)
         if image_list:
-            image_string = image_list[0]
+                image_string = image_list[0]
 
-            # Decode the base64-encoded image string
-            image_bytes = base64.b64decode(image_string)
+                # Decode the base64-encoded image string
+                image_bytes = base64.b64decode(image_string)
 
-            # Open the image
-            image = Image.open(BytesIO(image_bytes))
+                # Save the image to MongoDB using GridFS
+                self.save_image_to_mongodb(image_bytes, self.entry.get())
 
-            # Get the canvas size
-            canvas_width = self.app.ui.canvas.winfo_width()
-            canvas_height = self.app.ui.canvas.winfo_height()
+                # Open the image
+                image = Image.open(BytesIO(image_bytes))
 
-            # Resize the image to match the canvas size
-            photo = ImageTk.PhotoImage(image.resize((canvas_width, canvas_height), resample=Image.LANCZOS))
-            self.app.ui.canvas.image = photo
-            self.app.ui.canvas.create_image(0, 0, anchor="nw", image=self.app.ui.canvas.image)
+                # Get the canvas size
+                canvas_width = self.app.ui.canvas.winfo_width()
+                canvas_height = self.app.ui.canvas.winfo_height()
 
+                # Resize the image to match the canvas size
+                photo = ImageTk.PhotoImage(image.resize((canvas_width, canvas_height), resample=Image.LANCZOS))
+                self.app.ui.canvas.image = photo
+                self.app.ui.canvas.create_image(0, 0, anchor="nw", image=self.app.ui.canvas.image)
         else:
             print("Error: No images found in the response.")
+ 
+    def save_image_to_mongodb(self, image_bytes, filename):
+        try:
+            # Connect to the server with the hostName and portNumber.
+            connection = MongoClient("mongodb+srv://new_years:AuMBHvQmKC5XFtTl@cluster0.6swbq.mongodb.net/")
+
+            # Connect to the Database where the images will be stored.
+            database = connection['DB_NAME']
+
+            # Create an object of GridFs for the above database.
+            fs = gridfs.GridFS(database)
+
+            # Now store/put the image via GridFs object.
+            fs.put(image_bytes, filename=filename)
+            print(f"Image '{filename}' saved to MongoDB successfully.")
+
+        except Exception as e:
+            print(f"Error saving image to MongoDB: {str(e)}")
+
 

@@ -101,7 +101,7 @@ class CameraHandler:
     def open_camera_for_eyes(self):
         self.cap = cv2.VideoCapture(0)
 
-        eye_cascade = cv2.CascadeClassifier('C:\\Users\\Anti coding club\\Desktop\\Emotion_Detection_CNN-main\\haarcascade_eye.xml')
+        eye_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
         if eye_cascade.empty():
             print("Error: Unable to load the eye cascade classifier.")
             return
@@ -151,7 +151,7 @@ class CameraHandler:
                             self.emotion_frames_count = 0
                             print(self.detected_emotion)
                             self.app.ui.updated_image = False
-                            self.app.ui.generate_image_from_emotion(self.detected_emotion)
+                            self.app.ui.generate_display_image_Deep_AI(self.detected_emotion)
                             break
 
                         self.face_detected = True
