@@ -37,7 +37,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         # Add a boolean attribute to track the sidebar state
         self.is_sidebar_visible = True
         
-        self.title("AI Image Generator")
+        self.title("MoodCraft AI")
         self.geometry(f"{1100}x{580}")
 
         # configure grid layout (4x4)
@@ -143,7 +143,7 @@ class ImageGeneratorUI(customtkinter.CTk):
             
         else:
             self.tabview.grid_remove()
-            self.canvas.grid(column=0, columnspan=3)  # Expand canvas to cover tabview's column
+            self.canvas.grid(column=0, columnspan=2)  # Expand canvas to cover tabview's column
               # Add a button to toggle the sidebar
             self.toggle_sidebar_button.grid(row=3, column=0)
             self.resize_after_toogle()

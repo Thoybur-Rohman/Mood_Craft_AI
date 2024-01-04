@@ -1,0 +1,11 @@
+Pillow
+requests
+keras
+numpy
+Pillow
+matplotlib
+pymongo
+customtkinter
+CTkMessagebox
+opencv-python
+tensorflow
