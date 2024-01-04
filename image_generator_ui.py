@@ -32,7 +32,6 @@ class ImageGeneratorUI(customtkinter.CTk):
         super().__init__()
         self.app = app
 
-
         self.title("AI Image Generator")
         self.geometry(f"{1100}x{580}")
 
@@ -41,107 +40,121 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.grid_columnconfigure((2, 3), weight=0)
         self.grid_rowconfigure((0, 1, 2), weight=1)
 
-        # create sidebar frame with widgets
+         # create sidebar frame with widgets
         self.sidebar_frame = customtkinter.CTkFrame(
             self, width=140, corner_radius=0)
-        self.sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
+        self.sidebar_frame.grid(row=0, column=3, rowspan=4, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(4, weight=1)
         self.logo_label = customtkinter.CTkLabel(
             self.sidebar_frame, text="CustomTkinter", font=customtkinter.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
+
+        self.is_sidebar_visible = True
+
+         # Add a button to toggle the sidebar
+        self.toggle_sidebar_button = customtkinter.CTkButton(
+            self, text="Toggle Sidebar", command=self.toggle_sidebar)
+        self.toggle_sidebar_button.grid(row=3, column=3)  # Adjust the position as needed
+
+
+
+
+         # create canvas
+        self.canvas = customtkinter.CTkCanvas(self, width=512, height=512)
+        self.canvas.grid(row=0, column=1, rowspan=3, sticky="nsew")  # Set rowspan to 3
+
+
+
+
+        # create tabview
+        self.tabview = customtkinter.CTkTabview(self, width=80)
+        self.tabview.grid(row=0, column=0, padx=(
+            20, 10), pady=(20, 0), sticky="nsew")
+        self.tabview.add("MoodCraft AI")
+        self.tabview.add("Generate")
+        self.tabview.add("Settings")
+
+        self.tabview.tab("MoodCraft AI").grid_columnconfigure(
+            0, weight=1)  # configure grid of individual tabs
+        self.tabview.tab("Generate").grid_columnconfigure(0, weight=1)
+
+        self.tabview.tab("Settings").grid_columnconfigure(0, weight=1)
+
+        # create main entry and button ------------------------------------------------------------------------------------------------ TAB 1 
+        self.label_tab_2 = customtkinter.CTkLabel(self.tabview.tab("MoodCraft AI"), text="select you generation type")
+        self.label_tab_2.grid(row=0, column=0, padx=5, pady=0)
+
         self.sidebar_button_1 = customtkinter.CTkButton(
-            self.sidebar_frame, command=self.sidebar_button_event)
+            self.tabview.tab("MoodCraft AI"), command=self.sidebar_button_event)
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
         self.sidebar_button_2 = customtkinter.CTkButton(
-            self.sidebar_frame, command=self.sidebar_button_event)
-        self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
-        self.sidebar_button_3 = customtkinter.CTkButton(
-            self.sidebar_frame, command=self.sidebar_button_event)
-        self.sidebar_button_3.grid(row=3, column=0, padx=20, pady=10)
+            self.tabview.tab("MoodCraft AI"), command=self.sidebar_button_event)
+        
+        
+        # ----------------------------------------------------------------------------------------------------------------------------- TAB 2
+
+        self.entry = customtkinter.CTkEntry(self.tabview.tab("Generate"),placeholder_text="Please enter a prompt",)
+        self.entry.grid(row=0, column=0,pady=(5, 5), sticky="nsew")
+        
+        self.main_button_1 = customtkinter.CTkButton(
+            self.tabview.tab("Generate"), fg_color="transparent", text="Generate" ,border_width=2, text_color=("gray10", "#DCE4EE"), command=self.generate_display_image_Deep_AI)
+        self.main_button_1.grid(row=1, column=0, padx=(
+            20, 20), pady=(5, 5), sticky="nsew")
+         
+        self.optionmenu_1 = customtkinter.CTkOptionMenu(self.tabview.tab("Generate"), dynamic_resizing=False,
+                                                        values=["Value 1", "Value 2", "Value Long Long Long"])
+        self.optionmenu_1.grid(row=2, column=0, padx=20, pady=(20, 10))
+
+        self.combobox_1 = customtkinter.CTkComboBox(self.tabview.tab("Generate"),
+                                                    values=["Value 1", "Value 2", "Value Long....."])
+        self.combobox_1.grid(row=3, column=0, padx=20, pady=(10, 10))
+
+        self.string_input_button = customtkinter.CTkButton(self.tabview.tab("Generate"), text="Open CTkInputDialog",
+                                                           command=self.open_input_dialog_event)
+        self.string_input_button.grid(row=4, column=0, padx=20, pady=(10, 10))
+        # ------------------------------------------------------------------------------------------------------------------------------ TAB 2
+        self.label_tab_2 = customtkinter.CTkLabel(self.tabview.tab("Settings"), text="CTkLabel on Tab 2")
+        self.label_tab_2.grid(row=0, column=0, padx=20, pady=20)
+        # ------------------------------------------------------------------------------------------------------------------------------ TAB 3 
+
         self.appearance_mode_label = customtkinter.CTkLabel(
-            self.sidebar_frame, text="Appearance Mode:", anchor="w")
-        self.appearance_mode_label.grid(row=5, column=0, padx=20, pady=(10, 0))
-        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["Light", "Dark", "System"],
-                                                                       command=self.change_appearance_mode_event)
+            self.tabview.tab("Settings"), text="Appearance Mode:", anchor="w")
+        self.appearance_mode_label.grid(row=0, column=0, padx=20, pady=(10, 0))
+        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.tabview.tab("Settings"), values=[
+                                                                       "Light", "Dark", "System"],                                                                  command=self.change_appearance_mode_event)
         self.appearance_mode_optionemenu.grid(
             row=6, column=0, padx=20, pady=(10, 10))
         self.scaling_label = customtkinter.CTkLabel(
-            self.sidebar_frame, text="UI Scaling:", anchor="w")
+            self.tabview.tab("Settings"), text="UI Scaling:", anchor="w")
         self.scaling_label.grid(row=7, column=0, padx=20, pady=(10, 0))
-        self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["80%", "90%", "100%", "110%", "120%"],
+        self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.tabview.tab("Settings"), values=["80%", "90%", "100%", "110%", "120%"],
                                                                command=self.change_scaling_event)
         self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 20))
+        #-------------------------------------------------------------------------------------------------------------------------------- TAB 3
 
-        # create main entry and button
-        self.entry = customtkinter.CTkEntry(
-            self, placeholder_text="Please enter a prompt")
-        self.entry.grid(row=3, column=1, columnspan=2, padx=(
-            20, 0), pady=(20, 20), sticky="nsew")
-
-        self.main_button_1 = customtkinter.CTkButton(
-            master=self, fg_color="transparent", border_width=2, text_color=("gray10", "#DCE4EE"), command=self.generate_display_image_Deep_AI)
-        self.main_button_1.grid(row=3, column=3, padx=(
-            20, 20), pady=(20, 20), sticky="nsew")
-
-        # create canvas
-        self.canvas = customtkinter.CTkCanvas(self, width=512, height=512)
-        self.canvas.grid(row=0, column=1, rowspan=3,
-                         sticky="nsew")  # Set rowspan to 3
-
-        # create tabview
-        self.tabview = customtkinter.CTkTabview(self, width=250)
-        self.tabview.grid(row=0, column=3, padx=(
-            20, 10), pady=(20, 0), sticky="nsew")
-        self.tabview.add("CTkTabview")
-        self.tabview.add("Tab 2")
-        self.tabview.add("Tab 3")
-        self.tabview.tab("CTkTabview").grid_columnconfigure(
-            0, weight=1)  # configure grid of individual tabs
-        self.tabview.tab("Tab 2").grid_columnconfigure(0, weight=1)
-
-        self.optionmenu_1 = customtkinter.CTkOptionMenu(self.tabview.tab("CTkTabview"), dynamic_resizing=False,
-                                                        values=["Value 1", "Value 2", "Value Long Long Long"])
-        self.optionmenu_1.grid(row=0, column=0, padx=20, pady=(20, 10))
-        self.combobox_1 = customtkinter.CTkComboBox(self.tabview.tab("CTkTabview"),
-                                                    values=["Value 1", "Value 2", "Value Long....."])
-        self.combobox_1.grid(row=1, column=0, padx=20, pady=(10, 10))
-        self.string_input_button = customtkinter.CTkButton(self.tabview.tab("CTkTabview"), text="Open CTkInputDialog",
-                                                           command=self.open_input_dialog_event)
-        self.string_input_button.grid(row=2, column=0, padx=20, pady=(10, 10))
-        self.label_tab_2 = customtkinter.CTkLabel(
-            self.tabview.tab("Tab 2"), text="CTkLabel on Tab 2")
-        self.label_tab_2.grid(row=0, column=0, padx=20, pady=20)
-
-        # create radiobutton frame
-        self.radiobutton_frame = customtkinter.CTkFrame(self)
-        self.radiobutton_frame.grid(row=1, column=3, padx=(
-            20, 10), pady=(20, 0), sticky="nsew")
-        self.radio_var = tkinter.IntVar(value=0)
-        self.label_radio_group = customtkinter.CTkLabel(
-            master=self.radiobutton_frame, text="CTkRadioButton Group:")
-        self.label_radio_group.grid(
-            row=0, column=2, columnspan=1, padx=10, pady=10, sticky="")
-        self.radio_button_1 = customtkinter.CTkRadioButton(
-            master=self.radiobutton_frame, variable=self.radio_var, value=0)
-        self.radio_button_1.grid(row=1, column=2, pady=10, padx=20, sticky="n")
-        self.radio_button_2 = customtkinter.CTkRadioButton(
-            master=self.radiobutton_frame, variable=self.radio_var, value=1)
-        self.radio_button_2.grid(row=2, column=2, pady=10, padx=20, sticky="n")
-        self.radio_button_3 = customtkinter.CTkRadioButton(
-            master=self.radiobutton_frame, variable=self.radio_var, value=2)
-        self.radio_button_3.grid(row=3, column=2, pady=10, padx=20, sticky="n")
-
-        # set default values
+        # set default values ---------------------------------------------------------------------------------------------------------------------
         self.sidebar_button_1.configure(
-             text="Toogle Camera")
-        self.sidebar_button_3.configure(
-            state="disabled", text="Disabled CTkButton")
-        self.radio_button_3.configure(state="disabled")
+            text="Toogle Camera")
         self.appearance_mode_optionemenu.set("Dark")
         self.scaling_optionemenu.set("100%")
-        self.optionmenu_1.set("CTkOptionmenu")
-        self.combobox_1.set("CTkComboBox")
 
+
+
+
+# ------------------------------------------------------------------------- METHODS ---------------------------------------------------------------------
+    def toggle_sidebar(self):
+        # Toggle the state
+            self.is_sidebar_visible = not self.is_sidebar_visible
+
+        # Show or hide the sidebar based on the state
+            if self.is_sidebar_visible:
+                self.sidebar_frame.grid()
+                self.canvas.grid(columnspan = 1)
+                  # Restore the original configuration
+            else:
+                self.sidebar_frame.grid_remove()
+                self.canvas.grid(columnspan = 3)  # Allocate the space to the canvas
+ 
     def open_input_dialog_event(self):
         dialog = customtkinter.CTkInputDialog(
             text="Type in a number:", title="CTkInputDialog")
@@ -156,15 +169,16 @@ class ImageGeneratorUI(customtkinter.CTk):
 
     def sidebar_button_event(self):
         self.app.camera_handler.toggle_camera()
-    
+
     def generate(self):
         user_prompt = self.entry.get()
         category = f"{user_prompt} emotion"
         self.app.camera_handler.display_image(category)
 
-    def generate_display_image_Deep_AI(self,emotion):
+    def generate_display_image_Deep_AI(self, emotion):
         category = emotion
-        api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MDM5OTMwMTUsInVzZXJfaWQiOiI2NTkwZGViMzBjNWYzNWIzMThjOTI5NDYifQ.UPTjRrFnubgH9oiMwpTITMky_eG8vdnRnOUgtoKUkKs"  # Replace with your actual API key
+        # Replace with your actual API key
+        api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MDM5OTMwMTUsInVzZXJfaWQiOiI2NTkwZGViMzBjNWYzNWIzMThjOTI5NDYifQ.UPTjRrFnubgH9oiMwpTITMky_eG8vdnRnOUgtoKUkKs"
 
         url1 = "https://api.wizmodel.com/sdapi/v1/txt2img"
 
@@ -177,38 +191,42 @@ class ImageGeneratorUI(customtkinter.CTk):
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {api_key}'
         }
-        response = requests.request("POST", url1, headers=headers, data=payload)
+        response = requests.request(
+            "POST", url1, headers=headers, data=payload)
         data = response.json()
         print(response.content)
         image_list = data.get("images", [])
         print(image_list)
         if image_list:
-                image_string = image_list[0]
+            image_string = image_list[0]
 
-                # Decode the base64-encoded image string
-                image_bytes = base64.b64decode(image_string)
+            # Decode the base64-encoded image string
+            image_bytes = base64.b64decode(image_string)
 
-                # Save the image to MongoDB using GridFS
-                self.save_image_to_mongodb(image_bytes, self.entry.get())
+            # Save the image to MongoDB using GridFS
+            self.save_image_to_mongodb(image_bytes, self.entry.get())
 
-                # Open the image
-                image = Image.open(BytesIO(image_bytes))
+            # Open the image
+            image = Image.open(BytesIO(image_bytes))
 
-                # Get the canvas size
-                canvas_width = self.app.ui.canvas.winfo_width()
-                canvas_height = self.app.ui.canvas.winfo_height()
+            # Get the canvas size
+            canvas_width = self.app.ui.canvas.winfo_width()
+            canvas_height = self.app.ui.canvas.winfo_height()
 
-                # Resize the image to match the canvas size
-                photo = ImageTk.PhotoImage(image.resize((canvas_width, canvas_height), resample=Image.LANCZOS))
-                self.app.ui.canvas.image = photo
-                self.app.ui.canvas.create_image(0, 0, anchor="nw", image=self.app.ui.canvas.image)
+            # Resize the image to match the canvas size
+            photo = ImageTk.PhotoImage(image.resize(
+                (canvas_width, canvas_height), resample=Image.LANCZOS))
+            self.app.ui.canvas.image = photo
+            self.app.ui.canvas.create_image(
+                0, 0, anchor="nw", image=self.app.ui.canvas.image)
         else:
             print("Error: No images found in the response.")
- 
+
     def save_image_to_mongodb(self, image_bytes, filename):
         try:
             # Connect to the server with the hostName and portNumber.
-            connection = MongoClient("mongodb+srv://new_years:AuMBHvQmKC5XFtTl@cluster0.6swbq.mongodb.net/")
+            connection = MongoClient(
+                "mongodb+srv://new_years:AuMBHvQmKC5XFtTl@cluster0.6swbq.mongodb.net/")
 
             # Connect to the Database where the images will be stored.
             database = connection['DB_NAME']
@@ -222,5 +240,3 @@ class ImageGeneratorUI(customtkinter.CTk):
 
         except Exception as e:
             print(f"Error saving image to MongoDB: {str(e)}")
-
-
