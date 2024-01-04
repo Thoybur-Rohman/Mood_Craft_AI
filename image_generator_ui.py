@@ -25,46 +25,35 @@ import base64
 customtkinter.set_appearance_mode("System")
 # Themes: "blue" (standard), "green", "dark-blue"
 customtkinter.set_default_color_theme("blue")
-
+global Canvas_image
+Canvas_image = None
 
 class ImageGeneratorUI(customtkinter.CTk):
     def __init__(self, app):
+        
         super().__init__()
         self.app = app
 
+        # Add a boolean attribute to track the sidebar state
+        self.is_sidebar_visible = True
+        
         self.title("AI Image Generator")
         self.geometry(f"{1100}x{580}")
 
         # configure grid layout (4x4)
+        self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)
-        self.grid_columnconfigure((2, 3), weight=0)
-        self.grid_rowconfigure((0, 1, 2), weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
-         # create sidebar frame with widgets
-        self.sidebar_frame = customtkinter.CTkFrame(
-            self, width=140, corner_radius=0)
-        self.sidebar_frame.grid(row=0, column=3, rowspan=4, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(4, weight=1)
-        self.logo_label = customtkinter.CTkLabel(
-            self.sidebar_frame, text="CustomTkinter", font=customtkinter.CTkFont(size=20, weight="bold"))
-        self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
-
-        self.is_sidebar_visible = True
-
-         # Add a button to toggle the sidebar
         self.toggle_sidebar_button = customtkinter.CTkButton(
             self, text="Toggle Sidebar", command=self.toggle_sidebar)
-        self.toggle_sidebar_button.grid(row=3, column=3)  # Adjust the position as needed
+        # Place the button in a fixed location
+        self.toggle_sidebar_button.grid(row=3, column=0)
 
-
-
-
-         # create canvas
+        # create canvas
         self.canvas = customtkinter.CTkCanvas(self, width=512, height=512)
-        self.canvas.grid(row=0, column=1, rowspan=3, sticky="nsew")  # Set rowspan to 3
-
-
-
+        self.canvas.grid(row=0, column=1, rowspan=3,
+                         sticky="nsew")  # Set rowspan to 3
 
         # create tabview
         self.tabview = customtkinter.CTkTabview(self, width=80)
@@ -80,8 +69,9 @@ class ImageGeneratorUI(customtkinter.CTk):
 
         self.tabview.tab("Settings").grid_columnconfigure(0, weight=1)
 
-        # create main entry and button ------------------------------------------------------------------------------------------------ TAB 1 
-        self.label_tab_2 = customtkinter.CTkLabel(self.tabview.tab("MoodCraft AI"), text="select you generation type")
+        # create main entry and button ------------------------------------------------------------------------------------------------ TAB 1
+        self.label_tab_2 = customtkinter.CTkLabel(self.tabview.tab(
+            "MoodCraft AI"), text="select you generation type")
         self.label_tab_2.grid(row=0, column=0, padx=5, pady=0)
 
         self.sidebar_button_1 = customtkinter.CTkButton(
@@ -89,18 +79,18 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
         self.sidebar_button_2 = customtkinter.CTkButton(
             self.tabview.tab("MoodCraft AI"), command=self.sidebar_button_event)
-        
-        
+
         # ----------------------------------------------------------------------------------------------------------------------------- TAB 2
 
-        self.entry = customtkinter.CTkEntry(self.tabview.tab("Generate"),placeholder_text="Please enter a prompt",)
-        self.entry.grid(row=0, column=0,pady=(5, 5), sticky="nsew")
-        
+        self.entry = customtkinter.CTkEntry(self.tabview.tab(
+            "Generate"), placeholder_text="Please enter a prompt",)
+        self.entry.grid(row=0, column=0, pady=(5, 5), sticky="nsew")
+
         self.main_button_1 = customtkinter.CTkButton(
-            self.tabview.tab("Generate"), fg_color="transparent", text="Generate" ,border_width=2, text_color=("gray10", "#DCE4EE"), command=self.generate_display_image_Deep_AI)
+            self.tabview.tab("Generate"), fg_color="transparent", text="Generate", border_width=2, text_color=("gray10", "#DCE4EE"), command=self.generate_display_image_Deep_AI)
         self.main_button_1.grid(row=1, column=0, padx=(
             20, 20), pady=(5, 5), sticky="nsew")
-         
+
         self.optionmenu_1 = customtkinter.CTkOptionMenu(self.tabview.tab("Generate"), dynamic_resizing=False,
                                                         values=["Value 1", "Value 2", "Value Long Long Long"])
         self.optionmenu_1.grid(row=2, column=0, padx=20, pady=(20, 10))
@@ -113,9 +103,10 @@ class ImageGeneratorUI(customtkinter.CTk):
                                                            command=self.open_input_dialog_event)
         self.string_input_button.grid(row=4, column=0, padx=20, pady=(10, 10))
         # ------------------------------------------------------------------------------------------------------------------------------ TAB 2
-        self.label_tab_2 = customtkinter.CTkLabel(self.tabview.tab("Settings"), text="CTkLabel on Tab 2")
+        self.label_tab_2 = customtkinter.CTkLabel(
+            self.tabview.tab("Settings"), text="CTkLabel on Tab 2")
         self.label_tab_2.grid(row=0, column=0, padx=20, pady=20)
-        # ------------------------------------------------------------------------------------------------------------------------------ TAB 3 
+        # ------------------------------------------------------------------------------------------------------------------------------ TAB 3
 
         self.appearance_mode_label = customtkinter.CTkLabel(
             self.tabview.tab("Settings"), text="Appearance Mode:", anchor="w")
@@ -130,7 +121,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.tabview.tab("Settings"), values=["80%", "90%", "100%", "110%", "120%"],
                                                                command=self.change_scaling_event)
         self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 20))
-        #-------------------------------------------------------------------------------------------------------------------------------- TAB 3
+        # -------------------------------------------------------------------------------------------------------------------------------- TAB 3
 
         # set default values ---------------------------------------------------------------------------------------------------------------------
         self.sidebar_button_1.configure(
@@ -138,23 +129,25 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.appearance_mode_optionemenu.set("Dark")
         self.scaling_optionemenu.set("100%")
 
-
-
-
 # ------------------------------------------------------------------------- METHODS ---------------------------------------------------------------------
     def toggle_sidebar(self):
         # Toggle the state
-            self.is_sidebar_visible = not self.is_sidebar_visible
+        self.is_sidebar_visible = not self.is_sidebar_visible
 
         # Show or hide the sidebar based on the state
-            if self.is_sidebar_visible:
-                self.sidebar_frame.grid()
-                self.canvas.grid(columnspan = 1)
-                  # Restore the original configuration
-            else:
-                self.sidebar_frame.grid_remove()
-                self.canvas.grid(columnspan = 3)  # Allocate the space to the canvas
- 
+        if self.is_sidebar_visible:
+            self.tabview.grid()
+            self.grid_columnconfigure(0, weight=0)  # Ensure tabview column does not expand
+            self.canvas.grid(column=1)  # Reset the canvas to its original column
+            self.resize_after_toogle()
+            
+        else:
+            self.tabview.grid_remove()
+            self.canvas.grid(column=0, columnspan=3)  # Expand canvas to cover tabview's column
+              # Add a button to toggle the sidebar
+            self.toggle_sidebar_button.grid(row=3, column=0)
+            self.resize_after_toogle()
+
     def open_input_dialog_event(self):
         dialog = customtkinter.CTkInputDialog(
             text="Type in a number:", title="CTkInputDialog")
@@ -174,8 +167,38 @@ class ImageGeneratorUI(customtkinter.CTk):
         user_prompt = self.entry.get()
         category = f"{user_prompt} emotion"
         self.app.camera_handler.display_image(category)
+    
+    def resize_after_toogle(self):
+        global Canvas_image
+
+        try:
+            if Canvas_image:
+                # Decode the base64-encoded image string
+                image_bytes = base64.b64decode(Canvas_image)
+                image = Image.open(BytesIO(image_bytes))
+
+                # Allow the UI to update its layout
+                self.update_idletasks()
+
+                # Get the updated canvas size
+                canvas_width = self.app.ui.canvas.winfo_width()
+                canvas_height = self.app.ui.canvas.winfo_height()
+
+                # Resize the image to match the canvas size
+                # This will not maintain the aspect ratio
+                photo = ImageTk.PhotoImage(image.resize(
+                    (canvas_width, canvas_height), resample=Image.LANCZOS))
+                self.app.ui.canvas.image = photo
+                self.app.ui.canvas.create_image(
+                    0, 0, anchor="nw", image=photo)
+            else:
+                print("Canvas_image is empty or invalid.")
+        except Exception as e:
+            print(f"Error in resizing or displaying the image: {e}")
+            
 
     def generate_display_image_Deep_AI(self, emotion):
+        global Canvas_image
         category = emotion
         # Replace with your actual API key
         api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MDM5OTMwMTUsInVzZXJfaWQiOiI2NTkwZGViMzBjNWYzNWIzMThjOTI5NDYifQ.UPTjRrFnubgH9oiMwpTITMky_eG8vdnRnOUgtoKUkKs"
@@ -199,6 +222,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         print(image_list)
         if image_list:
             image_string = image_list[0]
+            Canvas_image = image_string
 
             # Decode the base64-encoded image string
             image_bytes = base64.b64decode(image_string)
@@ -218,7 +242,7 @@ class ImageGeneratorUI(customtkinter.CTk):
                 (canvas_width, canvas_height), resample=Image.LANCZOS))
             self.app.ui.canvas.image = photo
             self.app.ui.canvas.create_image(
-                0, 0, anchor="nw", image=self.app.ui.canvas.image)
+                0, 1, anchor="nw", image=self.app.ui.canvas.image)
         else:
             print("Error: No images found in the response.")
 
