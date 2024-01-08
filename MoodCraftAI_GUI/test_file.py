@@ -56,7 +56,7 @@ image_bytes = b'iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAANGUlEQVR4nOzXDa/X
 image = base64.b64decode(image_bytes)
 filename = 'example_movie_poster.png'
 movie_info = {
-    "imdbId": "tt1234567",
+    "imdbId": "tt1234568",
     "title": "Test Movie Title",
     "releaseDate": "2024-01-01",
     "trailerLink": "https://example.com/trailer",
