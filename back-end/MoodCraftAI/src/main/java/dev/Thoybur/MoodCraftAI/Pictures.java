@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
 
@@ -17,17 +19,15 @@ import java.util.List;
 @NoArgsConstructor
 public class Pictures {
         @Id
-        private ObjectId Id;
-
-        private String imdbID;
-
+        private ObjectId id;
+        private String imdbId;
         private String title;
-
         private String releaseDate;
-
         private String trailerLink;
-
+        private String poster;
+        private List<String> backdrops;
         private List<String> genres;
+        @DocumentReference
+        private List<Review> reviews;
 
-        private List<String> backdrop;
 }
