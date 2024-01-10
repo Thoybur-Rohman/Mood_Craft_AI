@@ -20,6 +20,10 @@ import matplotlib.pyplot as plt
 from pymongo import MongoClient
 import gridfs
 import base64
+import qrcode
+import openai
+import os
+import threading
 
 # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_appearance_mode("System")
@@ -28,15 +32,36 @@ customtkinter.set_default_color_theme("blue")
 global Canvas_image
 Canvas_image = None
 
+
 class ImageGeneratorUI(customtkinter.CTk):
     def __init__(self, app):
-        
+
         super().__init__()
         self.app = app
 
+        # Change to the actual URL when deployed
+        web_app_url = "https://www.youtube.com/"
+
+        # Generate QR Code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=6,
+            border=2,
+        )
+        qr.add_data(web_app_url)  # Replace with your data
+        qr.make(fit=True)
+
+        qr_img = qr.make_image(fill_color="Black", back_color="White")
+        qr_photo = ImageTk.PhotoImage(qr_img)
+
+        # Resize the QR Code Image
+        desired_size = (10, 10)  # Example size, adjust as needed
+        qr_img_resized = qr_img.resize(desired_size, Image.Resampling.LANCZOS)
+
         # Add a boolean attribute to track the sidebar state
         self.is_sidebar_visible = True
-        
+
         self.title("MoodCraft AI")
         self.geometry(f"{1100}x{580}")
 
@@ -49,6 +74,7 @@ class ImageGeneratorUI(customtkinter.CTk):
             self, text="Toggle Sidebar", command=self.toggle_sidebar)
         # Place the button in a fixed location
         self.toggle_sidebar_button.grid(row=3, column=0)
+
 
         # create canvas
         self.canvas = customtkinter.CTkCanvas(self, width=512, height=512)
@@ -87,21 +113,25 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.entry.grid(row=0, column=0, pady=(5, 5), sticky="nsew")
 
         self.main_button_1 = customtkinter.CTkButton(
-            self.tabview.tab("Generate"), fg_color="transparent", text="Generate", border_width=2, text_color=("gray10", "#DCE4EE"), command=self.generate_display_image_Deep_AI)
+            self.tabview.tab("Generate"), fg_color="transparent", text="Generate", border_width=2, text_color=("gray10", "#DCE4EE"), command=self.startgen)
         self.main_button_1.grid(row=1, column=0, padx=(
             20, 20), pady=(5, 5), sticky="nsew")
 
         self.optionmenu_1 = customtkinter.CTkOptionMenu(self.tabview.tab("Generate"), dynamic_resizing=False,
-                                                        values=["Value 1", "Value 2", "Value Long Long Long"])
+                                                        values=["Realistic", "Cartoon", "3D Illustration", "Flat Art"])
         self.optionmenu_1.grid(row=2, column=0, padx=20, pady=(20, 10))
 
-        self.combobox_1 = customtkinter.CTkComboBox(self.tabview.tab("Generate"),
-                                                    values=["Value 1", "Value 2", "Value Long....."])
-        self.combobox_1.grid(row=3, column=0, padx=20, pady=(10, 10))
 
         self.string_input_button = customtkinter.CTkButton(self.tabview.tab("Generate"), text="Open CTkInputDialog",
                                                            command=self.open_input_dialog_event)
-        self.string_input_button.grid(row=4, column=0, padx=20, pady=(10, 10))
+        self.string_input_button.grid(row=3, column=0, padx=20, pady=(10, 10))
+
+        self.qr_label = customtkinter.CTkLabel(
+            self.tabview.tab("MoodCraft AI"), image=qr_photo)
+        self.qr_label.image = qr_photo  # Keep a reference to avoid garbage collection
+        # Adjust row and column as needed
+        self.qr_label.grid(row=2, column=0, padx=0, pady=0)
+
         # ------------------------------------------------------------------------------------------------------------------------------ TAB 2
         self.label_tab_2 = customtkinter.CTkLabel(
             self.tabview.tab("Settings"), text="CTkLabel on Tab 2")
@@ -130,6 +160,29 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.scaling_optionemenu.set("100%")
 
 # ------------------------------------------------------------------------- METHODS ---------------------------------------------------------------------
+    def startgen(self):
+        self.progressbar = customtkinter.CTkProgressBar(
+            self, orientation="horizontal", indeterminate_speed=2, mode="indeterminate" , width=800)
+        self.progressbar.grid(row=3, column=1, padx=20, pady=10)
+        self.progressbar.start()
+
+        # Start image generation in a separate thread
+        thread = threading.Thread(target=self.threaded_image_generation)
+        thread.start()
+
+    def threaded_image_generation(self):
+        self.generate_image_from_emotion()
+
+    # Schedule the stop_progressbar method to run on the main thread
+        self.app.ui.after(0, self.stop_progressbar)
+
+    def stop_progressbar(self):
+        self.progressbar.stop()
+        self.progressbar.grid_forget()
+
+    # Any other UI updates after image generation can be done here
+
+        
     def toggle_sidebar(self):
         # Toggle the state
         self.is_sidebar_visible = not self.is_sidebar_visible
@@ -137,16 +190,69 @@ class ImageGeneratorUI(customtkinter.CTk):
         # Show or hide the sidebar based on the state
         if self.is_sidebar_visible:
             self.tabview.grid()
-            self.grid_columnconfigure(0, weight=0)  # Ensure tabview column does not expand
-            self.canvas.grid(column=1)  # Reset the canvas to its original column
+            # Ensure tabview column does not expand
+            self.grid_columnconfigure(0, weight=0)
+            # Reset the canvas to its original column
+            self.canvas.grid(column=1)
             self.resize_after_toogle()
-            
+
         else:
             self.tabview.grid_remove()
-            self.canvas.grid(column=0, columnspan=2)  # Expand canvas to cover tabview's column
-              # Add a button to toggle the sidebar
+            # Expand canvas to cover tabview's column
+            self.canvas.grid(column=0, columnspan=2)
+            # Add a button to toggle the sidebar
             self.toggle_sidebar_button.grid(row=3, column=0)
             self.resize_after_toogle()
+    # Function to generate image from detected emotion
+
+    def generate_image_from_emotion(self):
+        
+        global Canvas_image
+        try:
+            # Securely get your API key
+            openai.api_key = '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'
+
+            user_prompt = "harry potter smoking weed with batman real life image"
+
+            # Assuming OpenAI API has an endpoint for image generation (fictional in this context)
+            response = openai.Image.create(
+                model="dall-e-3",
+                prompt=user_prompt,
+                n=1,
+                quality="hd",
+                size="1024x1024"
+            )
+
+            image_urls = [response['data'][i]['url']
+                          for i in range(len(response['data']))]
+
+            for url in image_urls:
+                response = requests.get(url)
+                response.raise_for_status()  # Raise an exception for HTTP errors
+                Canvas_image = response.content  # Store the raw bytes of the image
+
+            # Display the first image
+            if image_urls:
+                self.display_image(Canvas_image)
+
+        except Exception as e:
+            print("An error occurred:", e)
+
+    def display_image(self, image_bytes):
+        try:
+            image = Image.open(io.BytesIO(image_bytes))
+
+            canvas_width = self.app.ui.canvas.winfo_width()
+            canvas_height = self.app.ui.canvas.winfo_height()
+
+            # Resize the image to match the canvas size
+            photo = ImageTk.PhotoImage(image.resize(
+                (canvas_width, canvas_height), resample=Image.LANCZOS))
+            self.app.ui.canvas.image = photo
+            self.app.ui.canvas.create_image(
+                0, 0, anchor="nw", image=self.app.ui.canvas.image)
+        except Exception as e:
+            print("Error in displaying the image:", e)
 
     def open_input_dialog_event(self):
         dialog = customtkinter.CTkInputDialog(
@@ -167,15 +273,15 @@ class ImageGeneratorUI(customtkinter.CTk):
         user_prompt = self.entry.get()
         category = f"{user_prompt} emotion"
         self.app.camera_handler.display_image(category)
-    
+
     def resize_after_toogle(self):
         global Canvas_image
 
         try:
             if Canvas_image:
                 # Decode the base64-encoded image string
-                image_bytes = base64.b64decode(Canvas_image)
-                image = Image.open(BytesIO(image_bytes))
+                # image_bytes = base64.b64decode(Canvas_image)
+                # image = Image.open(BytesIO(image_bytes))
 
                 # Allow the UI to update its layout
                 self.update_idletasks()
@@ -184,18 +290,22 @@ class ImageGeneratorUI(customtkinter.CTk):
                 canvas_width = self.app.ui.canvas.winfo_width()
                 canvas_height = self.app.ui.canvas.winfo_height()
 
+                image = Image.open(io.BytesIO(Canvas_image))
+
+                canvas_width = self.app.ui.canvas.winfo_width()
+                canvas_height = self.app.ui.canvas.winfo_height()
+
                 # Resize the image to match the canvas size
-                # This will not maintain the aspect ratio
                 photo = ImageTk.PhotoImage(image.resize(
                     (canvas_width, canvas_height), resample=Image.LANCZOS))
                 self.app.ui.canvas.image = photo
                 self.app.ui.canvas.create_image(
-                    0, 0, anchor="nw", image=photo)
+                    0, 0, anchor="nw", image=self.app.ui.canvas.image)
+
             else:
                 print("Canvas_image is empty or invalid.")
         except Exception as e:
             print(f"Error in resizing or displaying the image: {e}")
-            
 
     def generate_display_image_Deep_AI(self, emotion):
         global Canvas_image
