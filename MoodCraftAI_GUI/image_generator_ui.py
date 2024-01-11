@@ -2,6 +2,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from CTkMessagebox import CTkMessagebox
 import customtkinter
+from bson import ObjectId
 from camera_handler import CameraHandler
 import tkinter
 import tkinter.messagebox
@@ -24,6 +25,12 @@ import qrcode
 import openai
 import os
 import threading
+from pymongo import MongoClient
+from pymongo import MongoClient
+from pymongo.collection import Collection
+from pymongo.database import Database
+import time
+
 
 # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_appearance_mode("System")
@@ -31,6 +38,10 @@ customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
 global Canvas_image
 Canvas_image = None
+mongo_client: MongoClient = MongoClient("mongodb+srv://MoodCraftAi:MoodCraftAi@moodcraftai.uygfyac.mongodb.net/?retryWrites=true&w=majority")
+database: Database = mongo_client.get_database("moodCraftAI")
+collection: Collection = database.get_collection("settings")
+
 
 
 class ImageGeneratorUI(customtkinter.CTk):
@@ -38,6 +49,10 @@ class ImageGeneratorUI(customtkinter.CTk):
 
         super().__init__()
         self.app = app
+        self.last_processed_doc_id = None
+        db_thread = threading.Thread(target=self.monitor_db_for_changes)
+        db_thread.daemon = True
+        db_thread.start()
 
         # Change to the actual URL when deployed
         web_app_url = "https://www.youtube.com/"
@@ -159,7 +174,38 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.appearance_mode_optionemenu.set("Dark")
         self.scaling_optionemenu.set("100%")
 
-# ------------------------------------------------------------------------- METHODS ---------------------------------------------------------------------
+# ------------------------------------------------------------------------- METHODS -------------------------------------------------------------------------
+        db_thread = threading.Thread(target=self.monitor_db_for_changes)
+        db_thread.daemon = True
+        db_thread.start()
+
+        
+
+
+    def monitor_db_for_changes(self):
+        with collection.watch() as stream:
+            for change in stream:
+                if change['operationType'] == 'insert':
+                    new_doc_id = change['documentKey']['_id']
+
+                    # Only process if this is a new document
+                    if new_doc_id != self.last_processed_doc_id:
+                        self.last_processed_doc_id = new_doc_id
+                        new_prompt = change['fullDocument']['prompt']
+                        self.update_prompt_and_generate_image(new_prompt)
+                        time.sleep(10)
+
+   
+            
+    def update_prompt_and_generate_image(self, new_prompt):
+        # Update the prompt in the Tkinter Entry widget
+        self.entry.delete(0, 'end')
+        self.entry.insert(0, new_prompt)
+
+        # Trigger image generation
+        self.app.ui.after(0, self.startgen)
+
+#------------------------------------------------------------------------PTOGRESSBAR--------------------------------------------------------------------------
     def startgen(self):
         self.progressbar = customtkinter.CTkProgressBar(
             self, orientation="horizontal", indeterminate_speed=2, mode="indeterminate" , width=800)
@@ -180,8 +226,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.progressbar.stop()
         self.progressbar.grid_forget()
 
-    # Any other UI updates after image generation can be done here
-
+ #-------------------------------------------------------------------------Toggll SideBar----------------------------------------------------------------------------------
         
     def toggle_sidebar(self):
         # Toggle the state
@@ -205,6 +250,8 @@ class ImageGeneratorUI(customtkinter.CTk):
             self.resize_after_toogle()
     # Function to generate image from detected emotion
 
+#------------------------------------------------------------------------Generate Image--------------------------------------------------------------------------
+            
     def generate_image_from_emotion(self):
         
         global Canvas_image
@@ -212,12 +259,12 @@ class ImageGeneratorUI(customtkinter.CTk):
             # Securely get your API key
             openai.api_key = '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'
 
-            user_prompt = "harry potter smoking weed with batman real life image"
+            
 
             # Assuming OpenAI API has an endpoint for image generation (fictional in this context)
             response = openai.Image.create(
                 model="dall-e-3",
-                prompt=user_prompt,
+                prompt=self.entry.get(),
                 n=1,
                 quality="hd",
                 size="1024x1024"
@@ -229,6 +276,7 @@ class ImageGeneratorUI(customtkinter.CTk):
             for url in image_urls:
                 response = requests.get(url)
                 response.raise_for_status()  # Raise an exception for HTTP errors
+                self.save_image_to_mongodb(response.content,self.entry.get())
                 Canvas_image = response.content  # Store the raw bytes of the image
 
             # Display the first image
@@ -237,7 +285,9 @@ class ImageGeneratorUI(customtkinter.CTk):
 
         except Exception as e:
             print("An error occurred:", e)
-
+    
+    
+#------------------------------------------------------------------------Display Image--------------------------------------------------------------------------
     def display_image(self, image_bytes):
         try:
             image = Image.open(io.BytesIO(image_bytes))
@@ -273,6 +323,8 @@ class ImageGeneratorUI(customtkinter.CTk):
         user_prompt = self.entry.get()
         category = f"{user_prompt} emotion"
         self.app.camera_handler.display_image(category)
+    
+     #-----------------------------------------------------------------------------------------------------------------------------------------------------------
 
     def resize_after_toogle(self):
         global Canvas_image
@@ -307,70 +359,94 @@ class ImageGeneratorUI(customtkinter.CTk):
         except Exception as e:
             print(f"Error in resizing or displaying the image: {e}")
 
-    def generate_display_image_Deep_AI(self, emotion):
-        global Canvas_image
-        category = emotion
-        # Replace with your actual API key
-        api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MDM5OTMwMTUsInVzZXJfaWQiOiI2NTkwZGViMzBjNWYzNWIzMThjOTI5NDYifQ.UPTjRrFnubgH9oiMwpTITMky_eG8vdnRnOUgtoKUkKs"
-
-        url1 = "https://api.wizmodel.com/sdapi/v1/txt2img"
-
-        payload = json.dumps({
-            "prompt": category,
-            "steps": 200
-        })
-
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {api_key}'
-        }
-        response = requests.request(
-            "POST", url1, headers=headers, data=payload)
-        data = response.json()
-        print(response.content)
-        image_list = data.get("images", [])
-        print(image_list)
-        if image_list:
-            image_string = image_list[0]
-            Canvas_image = image_string
-
-            # Decode the base64-encoded image string
-            image_bytes = base64.b64decode(image_string)
-
-            # Save the image to MongoDB using GridFS
-            self.save_image_to_mongodb(image_bytes, self.entry.get())
-
-            # Open the image
-            image = Image.open(BytesIO(image_bytes))
-
-            # Get the canvas size
-            canvas_width = self.app.ui.canvas.winfo_width()
-            canvas_height = self.app.ui.canvas.winfo_height()
-
-            # Resize the image to match the canvas size
-            photo = ImageTk.PhotoImage(image.resize(
-                (canvas_width, canvas_height), resample=Image.LANCZOS))
-            self.app.ui.canvas.image = photo
-            self.app.ui.canvas.create_image(
-                0, 1, anchor="nw", image=self.app.ui.canvas.image)
-        else:
-            print("Error: No images found in the response.")
-
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
+            
     def save_image_to_mongodb(self, image_bytes, filename):
         try:
-            # Connect to the server with the hostName and portNumber.
-            connection = MongoClient(
-                "mongodb+srv://new_years:AuMBHvQmKC5XFtTl@cluster0.6swbq.mongodb.net/")
+            # Convert the image bytes to a PNG format
+            try:
+                image = Image.open(io.BytesIO(image_bytes))
+                with io.BytesIO() as png_io:
+                    image.save(png_io, format="PNG")
+                    png_bytes = png_io.getvalue()
+            except IOError:
+                raise Exception("Unable to convert image to PNG - may be invalid image data")
+
+            # Connect to MongoDB
+            connection = MongoClient("mongodb+srv://MoodCraftAi:MoodCraftAi@moodcraftai.uygfyac.mongodb.net/?retryWrites=true&w=majority")
 
             # Connect to the Database where the images will be stored.
-            database = connection['DB_NAME']
-
-            # Create an object of GridFs for the above database.
+            database = connection['moodCraftAI']
             fs = gridfs.GridFS(database)
 
-            # Now store/put the image via GridFs object.
-            fs.put(image_bytes, filename=filename)
-            print(f"Image '{filename}' saved to MongoDB successfully.")
+            # Store the PNG image in GridFS
+            image_id = fs.put(png_bytes, filename=filename,collection='generated_images')
+
+            # Update the movie_info with the image reference
+            m = str(image_id)
+
+            # Create and insert the movie document
+            generted_art = {
+                "imdbId": ObjectId(),
+                "mood": [],
+                "art": str(image_id),
+                "reviewIds": []
+            }
+            movies_collection = database['Movies']
+            movies_collection.insert_one(generted_art)
+
+            print(f"Image '{filename}' and associated data saved to MongoDB successfully.")
 
         except Exception as e:
             print(f"Error saving image to MongoDB: {str(e)}")
+
+    # def generate_display_image_Deep_AI(self, emotion):
+    #     global Canvas_image
+    #     category = emotion
+    #     # Replace with your actual API key
+    #     api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MDM5OTMwMTUsInVzZXJfaWQiOiI2NTkwZGViMzBjNWYzNWIzMThjOTI5NDYifQ.UPTjRrFnubgH9oiMwpTITMky_eG8vdnRnOUgtoKUkKs"
+
+    #     url1 = "https://api.wizmodel.com/sdapi/v1/txt2img"
+
+    #     payload = json.dumps({
+    #         "prompt": category,
+    #         "steps": 200
+    #     })
+
+    #     headers = {
+    #         'Content-Type': 'application/json',
+    #         'Authorization': f'Bearer {api_key}'
+    #     }
+    #     response = requests.request(
+    #         "POST", url1, headers=headers, data=payload)
+    #     data = response.json()
+    #     print(response.content)
+    #     image_list = data.get("images", [])
+    #     print(image_list)
+    #     if image_list:
+    #         image_string = image_list[0]
+    #         Canvas_image = image_string
+
+    #         # Decode the base64-encoded image string
+    #         image_bytes = base64.b64decode(image_string)
+
+    #         # Save the image to MongoDB using GridFS
+    #         self.save_image_to_mongodb(image_bytes, self.entry.get())
+
+    #         # Open the image
+    #         image = Image.open(BytesIO(image_bytes))
+
+    #         # Get the canvas size
+    #         canvas_width = self.app.ui.canvas.winfo_width()
+    #         canvas_height = self.app.ui.canvas.winfo_height()
+
+    #         # Resize the image to match the canvas size
+    #         photo = ImageTk.PhotoImage(image.resize(
+    #             (canvas_width, canvas_height), resample=Image.LANCZOS))
+    #         self.app.ui.canvas.image = photo
+    #         self.app.ui.canvas.create_image(
+    #             0, 1, anchor="nw", image=self.app.ui.canvas.image)
+    #     else:
+    #         print("Error: No images found in the response.")
+
+

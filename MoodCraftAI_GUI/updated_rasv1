@@ -4,7 +4,6 @@ from keras.models import load_model
 from keras.preprocessing.image import img_to_array
 
 class CameraHandler:
-    # ... [rest of your class attributes] ...
 
     def open_camera(self):
         emotion_frames_count = 0

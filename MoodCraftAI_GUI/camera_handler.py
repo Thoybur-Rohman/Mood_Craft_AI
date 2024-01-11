@@ -98,100 +98,103 @@ class CameraHandler:
         cap.release()
         cv2.destroyAllWindows()
 
-    def open_camera_for_eyes(self):
-        self.cap = cv2.VideoCapture(0)
 
-        eye_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-        if eye_cascade.empty():
-            print("Error: Unable to load the eye cascade classifier.")
-            return
+# -------------------------------------------------------------------------------UNUSED CODE--------------------------------------------------------------------------------------------
 
-        emotion_classifier = load_model('model.h5')
-        emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
+    # def open_camera_for_eyes(self):
+    #     self.cap = cv2.VideoCapture(0)
 
-        while self.camera_enabled:
-            ret, frame = self.cap.read()
-            if not ret:
-                break
+    #     eye_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    #     if eye_cascade.empty():
+    #         print("Error: Unable to load the eye cascade classifier.")
+    #         return
 
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    #     emotion_classifier = load_model('model.h5')
+    #     emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
 
-            eyes = eye_cascade.detectMultiScale(
-                gray, scaleFactor=1.3, minNeighbors=5, minSize=(30, 30))
+    #     while self.camera_enabled:
+    #         ret, frame = self.cap.read()
+    #         if not ret:
+    #             break
 
-            if len(eyes) > 0:
-                if not self.is_window_open:
-                    cv2.namedWindow("Eyes Detected", cv2.WINDOW_NORMAL)
-                    self.is_window_open = True
-                cv2.imshow("Eyes Detected", frame)
+    #         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-                gray_face = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                faces = eye_cascade.detectMultiScale(gray_face)
+    #         eyes = eye_cascade.detectMultiScale(
+    #             gray, scaleFactor=1.3, minNeighbors=5, minSize=(30, 30))
 
-                for (x, y, w, h) in faces:
-                    roi_gray = gray_face[y:y + h, x:x + w]
-                    roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
+    #         if len(eyes) > 0:
+    #             if not self.is_window_open:
+    #                 cv2.namedWindow("Eyes Detected", cv2.WINDOW_NORMAL)
+    #                 self.is_window_open = True
+    #             cv2.imshow("Eyes Detected", frame)
 
-                    if np.sum([roi_gray]) != 0:
-                        roi = roi_gray.astype('float') / 255.0
-                        roi = img_to_array(roi)
-                        roi = np.expand_dims(roi, axis=0)
+    #             gray_face = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    #             faces = eye_cascade.detectMultiScale(gray_face)
 
-                        prediction = emotion_classifier.predict(roi)[0]
-                        label = emotion_labels[prediction.argmax()]
-                        label_position = (x, y)
-                        cv2.putText(frame, label, label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    #             for (x, y, w, h) in faces:
+    #                 roi_gray = gray_face[y:y + h, x:x + w]
+    #                 roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
 
-                        self.detected_emotion = label
-                        self.emotion_frames_count += 1
+    #                 if np.sum([roi_gray]) != 0:
+    #                     roi = roi_gray.astype('float') / 255.0
+    #                     roi = img_to_array(roi)
+    #                     roi = np.expand_dims(roi, axis=0)
 
-                        if self.emotion_frames_count >= self.emotion_frames_threshold:
-                            self.cap.release()
-                            cv2.destroyAllWindows()
-                            self.emotion_frames_count = 0
-                            print(self.detected_emotion)
-                            self.app.ui.updated_image = False
-                            self.app.ui.generate_display_image_Deep_AI(self.detected_emotion)
-                            break
+    #                     prediction = emotion_classifier.predict(roi)[0]
+    #                     label = emotion_labels[prediction.argmax()]
+    #                     label_position = (x, y)
+    #                     cv2.putText(frame, label, label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-                        self.face_detected = True
-                    else:
-                        cv2.putText(frame, 'No Faces', (30, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                        self.emotion_frames_count = 0
-            elif self.is_window_open:
-                cv2.destroyWindow("Eyes Detected")
-                self.is_window_open = False
+    #                     self.detected_emotion = label
+    #                     self.emotion_frames_count += 1
 
-            key = cv2.waitKey(1)
-            if key == 27:
-                break
+    #                     if self.emotion_frames_count >= self.emotion_frames_threshold:
+    #                         self.cap.release()
+    #                         cv2.destroyAllWindows()
+    #                         self.emotion_frames_count = 0
+    #                         print(self.detected_emotion)
+    #                         self.app.ui.updated_image = False
+    #                         self.app.ui.generate_display_image_Deep_AI(self.detected_emotion)
+    #                         break
 
-        self.cap.release()
-        cv2.destroyAllWindows()
+    #                     self.face_detected = True
+    #                 else:
+    #                     cv2.putText(frame, 'No Faces', (30, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    #                     self.emotion_frames_count = 0
+    #         elif self.is_window_open:
+    #             cv2.destroyWindow("Eyes Detected")
+    #             self.is_window_open = False
 
-    def display_image(self, category):
-        try:
-        # Make a request to the Unsplash API to get a random image
-            url = f"https://api.unsplash.com/photos/random?query={category}&orientation=landscape&client_id=1n7sSMtCh8Hs_MrBOjhQ1SygTDA-BJ550UdX3rwLYZQ"
-            data = requests.get(url).json()
-            img_data = requests.get(data["urls"]["regular"]).content
+    #         key = cv2.waitKey(1)
+    #         if key == 27:
+    #             break
 
-            # Get the canvas size
-            canvas_width = self.app.ui.canvas.winfo_width()
-            canvas_height = self.app.ui.canvas.winfo_height()
-
-            # Resize the image to match the canvas size
-            photo = ImageTk.PhotoImage(Image.open(io.BytesIO(img_data)).resize((canvas_width, canvas_height), resample=Image.LANCZOS))
-            self.app.ui.canvas.image = photo
-            self.app.ui.canvas.create_image(0, 0, anchor="nw", image=self.app.ui.canvas.image)
-
-        except Exception as e:
-            # Handle the error and display an error message in a pop-up
-            error_message = f"An error occurred: {str(e)}"
-            CTkMessagebox(title="Error", message=error_message, icon="cancel")
+    #     self.cap.release()
+    #     cv2.destroyAllWindows()
 
 
-    def generate_image_from_emotion(self, emotion):
-        # ... (code for image generation)
-        pass
+# -------------------------------------------------------------------------------UNUSED CODE--------------------------------------------------------------------------------------------
+
+
+    # def display_image(self, category):
+    #     try:
+    #     # Make a request to the Unsplash API to get a random image
+    #         url = f"https://api.unsplash.com/photos/random?query={category}&orientation=landscape&client_id=1n7sSMtCh8Hs_MrBOjhQ1SygTDA-BJ550UdX3rwLYZQ"
+    #         data = requests.get(url).json()
+    #         img_data = requests.get(data["urls"]["regular"]).content
+
+    #         # Get the canvas size
+    #         canvas_width = self.app.ui.canvas.winfo_width()
+    #         canvas_height = self.app.ui.canvas.winfo_height()
+
+    #         # Resize the image to match the canvas size
+    #         photo = ImageTk.PhotoImage(Image.open(io.BytesIO(img_data)).resize((canvas_width, canvas_height), resample=Image.LANCZOS))
+    #         self.app.ui.canvas.image = photo
+    #         self.app.ui.canvas.create_image(0, 0, anchor="nw", image=self.app.ui.canvas.image)
+
+    #     except Exception as e:
+    #         # Handle the error and display an error message in a pop-up
+    #         error_message = f"An error occurred: {str(e)}"
+    #         CTkMessagebox(title="Error", message=error_message, icon="cancel")
+
 
