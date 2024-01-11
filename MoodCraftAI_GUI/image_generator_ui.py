@@ -1,47 +1,37 @@
-import tkinter as tk
-from PIL import Image, ImageTk
-from CTkMessagebox import CTkMessagebox
-import customtkinter
-from bson import ObjectId
-from camera_handler import CameraHandler
-import tkinter
-import tkinter.messagebox
-from PIL import Image
-import json
+import base64
 import io
-import base64
 import json
-from PIL import Image
-from io import BytesIO
-import json
-import requests
-from PIL import Image
-from io import BytesIO
-import matplotlib.pyplot as plt
-from pymongo import MongoClient
-import gridfs
-import base64
-import qrcode
-import openai
 import os
 import threading
-from pymongo import MongoClient
+import time
+import tkinter
+import tkinter.messagebox
+import customtkinter
+import matplotlib.pyplot as plt
+import openai
+import gridfs
+import qrcode
+import requests
+from bson import ObjectId
+from camera_handler import CameraHandler
+from CTkMessagebox import CTkMessagebox
+from io import BytesIO
+from PIL import Image, ImageTk
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
-import time
-
 
 # Modes: "System" (standard), "Dark", "Light"
-customtkinter.set_appearance_mode("System")
+customtkinter.set_appearance_mode("Dark")
 # Themes: "blue" (standard), "green", "dark-blue"
-customtkinter.set_default_color_theme("blue")
+customtkinter.set_default_color_theme("dark-blue")
 global Canvas_image
 Canvas_image = None
-mongo_client: MongoClient = MongoClient("mongodb+srv://MoodCraftAi:MoodCraftAi@moodcraftai.uygfyac.mongodb.net/?retryWrites=true&w=majority")
+mongo_client: MongoClient = MongoClient(
+    "mongodb+srv://MoodCraftAi:MoodCraftAi@moodcraftai.uygfyac.mongodb.net/?retryWrites=true&w=majority")
 database: Database = mongo_client.get_database("moodCraftAI")
 collection: Collection = database.get_collection("settings")
-
+dalle_e_api_key = "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"
 
 
 class ImageGeneratorUI(customtkinter.CTk):
@@ -90,7 +80,6 @@ class ImageGeneratorUI(customtkinter.CTk):
         # Place the button in a fixed location
         self.toggle_sidebar_button.grid(row=3, column=0)
 
-
         # create canvas
         self.canvas = customtkinter.CTkCanvas(self, width=512, height=512)
         self.canvas.grid(row=0, column=1, rowspan=3,
@@ -102,13 +91,13 @@ class ImageGeneratorUI(customtkinter.CTk):
             20, 10), pady=(20, 0), sticky="nsew")
         self.tabview.add("MoodCraft AI")
         self.tabview.add("Generate")
-        self.tabview.add("Settings")
+       # self.tabview.add("Settings")
 
         self.tabview.tab("MoodCraft AI").grid_columnconfigure(
             0, weight=1)  # configure grid of individual tabs
         self.tabview.tab("Generate").grid_columnconfigure(0, weight=1)
 
-        self.tabview.tab("Settings").grid_columnconfigure(0, weight=1)
+      #  self.tabview.tab("Settings").grid_columnconfigure(0, weight=1)
 
         # create main entry and button ------------------------------------------------------------------------------------------------ TAB 1
         self.label_tab_2 = customtkinter.CTkLabel(self.tabview.tab(
@@ -132,12 +121,11 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.main_button_1.grid(row=1, column=0, padx=(
             20, 20), pady=(5, 5), sticky="nsew")
 
-        self.optionmenu_1 = customtkinter.CTkOptionMenu(self.tabview.tab("Generate"), dynamic_resizing=False,
-                                                        values=["Realistic", "Cartoon", "3D Illustration", "Flat Art"])
-        self.optionmenu_1.grid(row=2, column=0, padx=20, pady=(20, 10))
+        self.optionmenu_artStyle = customtkinter.CTkOptionMenu(self.tabview.tab("Generate"), dynamic_resizing=False,
+                                                               values=["Realistic", "Cartoon", "3D Illustration", "Flat Art"])
+        self.optionmenu_artStyle.grid(row=2, column=0, padx=20, pady=(20, 10))
 
-
-        self.string_input_button = customtkinter.CTkButton(self.tabview.tab("Generate"), text="Open CTkInputDialog",
+        self.string_input_button = customtkinter.CTkButton(self.tabview.tab("Generate"), text="Set Dalle-E API Key",
                                                            command=self.open_input_dialog_event)
         self.string_input_button.grid(row=3, column=0, padx=20, pady=(10, 10))
 
@@ -147,40 +135,17 @@ class ImageGeneratorUI(customtkinter.CTk):
         # Adjust row and column as needed
         self.qr_label.grid(row=2, column=0, padx=0, pady=0)
 
-        # ------------------------------------------------------------------------------------------------------------------------------ TAB 2
-        self.label_tab_2 = customtkinter.CTkLabel(
-            self.tabview.tab("Settings"), text="CTkLabel on Tab 2")
-        self.label_tab_2.grid(row=0, column=0, padx=20, pady=20)
-        # ------------------------------------------------------------------------------------------------------------------------------ TAB 3
 
-        self.appearance_mode_label = customtkinter.CTkLabel(
-            self.tabview.tab("Settings"), text="Appearance Mode:", anchor="w")
-        self.appearance_mode_label.grid(row=0, column=0, padx=20, pady=(10, 0))
-        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.tabview.tab("Settings"), values=[
-                                                                       "Light", "Dark", "System"],                                                                  command=self.change_appearance_mode_event)
-        self.appearance_mode_optionemenu.grid(
-            row=6, column=0, padx=20, pady=(10, 10))
-        self.scaling_label = customtkinter.CTkLabel(
-            self.tabview.tab("Settings"), text="UI Scaling:", anchor="w")
-        self.scaling_label.grid(row=7, column=0, padx=20, pady=(10, 0))
-        self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.tabview.tab("Settings"), values=["80%", "90%", "100%", "110%", "120%"],
-                                                               command=self.change_scaling_event)
-        self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 20))
-        # -------------------------------------------------------------------------------------------------------------------------------- TAB 3
-
-        # set default values ---------------------------------------------------------------------------------------------------------------------
+# set default values ---------------------------------------------------------------------------------------------------------------------
         self.sidebar_button_1.configure(
             text="Toogle Camera")
-        self.appearance_mode_optionemenu.set("Dark")
-        self.scaling_optionemenu.set("100%")
+      #  self.appearance_mode_optionemenu.set("Dark")
+      #  self.scaling_optionemenu.set("100%")
 
 # ------------------------------------------------------------------------- METHODS -------------------------------------------------------------------------
         db_thread = threading.Thread(target=self.monitor_db_for_changes)
         db_thread.daemon = True
         db_thread.start()
-
-        
-
 
     def monitor_db_for_changes(self):
         with collection.watch() as stream:
@@ -192,32 +157,46 @@ class ImageGeneratorUI(customtkinter.CTk):
                     if new_doc_id != self.last_processed_doc_id:
                         self.last_processed_doc_id = new_doc_id
                         new_prompt = change['fullDocument']['prompt']
-                        self.update_prompt_and_generate_image(new_prompt)
+                        new_art_style = change['fullDocument']['style']
+                        self.update_prompt_and_generate_image(
+                            new_prompt, new_art_style)
                         time.sleep(10)
 
-   
-            
-    def update_prompt_and_generate_image(self, new_prompt):
+    def update_prompt_and_generate_image(self, new_prompt, new_art_style):
         # Update the prompt in the Tkinter Entry widget
         self.entry.delete(0, 'end')
         self.entry.insert(0, new_prompt)
+        self.optionmenu_artStyle.set(new_art_style)
+
+        print(self.optionmenu_artStyle)
 
         # Trigger image generation
         self.app.ui.after(0, self.startgen)
 
-#------------------------------------------------------------------------PTOGRESSBAR--------------------------------------------------------------------------
-    def startgen(self):
+# ------------------------------------------------------------------------PTOGRESSBAR--------------------------------------------------------------------------
+    def startgen(self, emotion=None):
         self.progressbar = customtkinter.CTkProgressBar(
-            self, orientation="horizontal", indeterminate_speed=2, mode="indeterminate" , width=800)
+            self, orientation="horizontal", indeterminate_speed=2, mode="indeterminate", width=800)
         self.progressbar.grid(row=3, column=1, padx=20, pady=10)
         self.progressbar.start()
 
-        # Start image generation in a separate thread
-        thread = threading.Thread(target=self.threaded_image_generation)
+        # Start image generation in a separate thread, checking if emotion is not None
+        if emotion is not None:
+            thread = threading.Thread(target=self.threaded_image_generation, args=(emotion,))
+        else:
+            thread = threading.Thread(target=self.threaded_image_generation)
+
         thread.start()
 
-    def threaded_image_generation(self):
-        self.generate_image_from_emotion()
+    def threaded_image_generation(self, emotion=None):
+        # Check if emotion is None and call generate_image_from_emotion accordingly
+        if emotion is not None:
+            self.generate_image_from_emotion(emotion)
+        else:
+            self.generate_image_from_emotion()
+
+        # Schedule the stop_progressbar method to run on the main thread
+        self.app.ui.after(0, self.stop_progressbar)
 
     # Schedule the stop_progressbar method to run on the main thread
         self.app.ui.after(0, self.stop_progressbar)
@@ -226,8 +205,8 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.progressbar.stop()
         self.progressbar.grid_forget()
 
- #-------------------------------------------------------------------------Toggll SideBar----------------------------------------------------------------------------------
-        
+ # -------------------------------------------------------------------------Toggll SideBar----------------------------------------------------------------------------------
+
     def toggle_sidebar(self):
         # Toggle the state
         self.is_sidebar_visible = not self.is_sidebar_visible
@@ -250,33 +229,38 @@ class ImageGeneratorUI(customtkinter.CTk):
             self.resize_after_toogle()
     # Function to generate image from detected emotion
 
-#------------------------------------------------------------------------Generate Image--------------------------------------------------------------------------
-            
-    def generate_image_from_emotion(self):
-        
+# ------------------------------------------------------------------------Generate Image--------------------------------------------------------------------------
+
+    def generate_image_from_emotion(self, emotion=None):
+
         global Canvas_image
         try:
             # Securely get your API key
-            openai.api_key = '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'
+            openai.api_key = dalle_e_api_key
 
-            
+            if emotion is None:
+                user_prompt = self.entry.get()
+            else:
+                user_prompt = emotion
 
+            user_prompt += " in style: " + self.optionmenu_artStyle.get()
+            print(user_prompt)
+            self.entry.delete(0, 'end')
             # Assuming OpenAI API has an endpoint for image generation (fictional in this context)
             response = openai.Image.create(
                 model="dall-e-3",
-                prompt=self.entry.get(),
+                prompt=user_prompt,
                 n=1,
                 quality="hd",
                 size="1024x1024"
             )
 
-            image_urls = [response['data'][i]['url']
-                          for i in range(len(response['data']))]
+            image_urls = [response['data'][i]['url'] for i in range(len(response['data']))]
 
             for url in image_urls:
                 response = requests.get(url)
                 response.raise_for_status()  # Raise an exception for HTTP errors
-                self.save_image_to_mongodb(response.content,self.entry.get())
+                self.save_image_to_mongodb(response.content, user_prompt)
                 Canvas_image = response.content  # Store the raw bytes of the image
 
             # Display the first image
@@ -285,9 +269,9 @@ class ImageGeneratorUI(customtkinter.CTk):
 
         except Exception as e:
             print("An error occurred:", e)
-    
-    
-#------------------------------------------------------------------------Display Image--------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------Display Image--------------------------------------------------------------------------
+
     def display_image(self, image_bytes):
         try:
             image = Image.open(io.BytesIO(image_bytes))
@@ -305,9 +289,16 @@ class ImageGeneratorUI(customtkinter.CTk):
             print("Error in displaying the image:", e)
 
     def open_input_dialog_event(self):
+        global dalle_e_api_key
         dialog = customtkinter.CTkInputDialog(
             text="Type in a number:", title="CTkInputDialog")
-        print("CTkInputDialog:", dialog.get_input())
+
+        # Assuming the dialog is blocking and waits for user input
+        dialog.wait_window()  # This waits for the dialog to close
+
+        # After the dialog is closed, get the input
+        dalle_e_api_key = dialog.get_input()
+        print("CTkInputDialog:", dalle_e_api_key)
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
@@ -317,14 +308,14 @@ class ImageGeneratorUI(customtkinter.CTk):
         customtkinter.set_widget_scaling(new_scaling_float)
 
     def sidebar_button_event(self):
-        self.app.camera_handler.toggle_camera()
+        self.app.camera_handler.open_camera()
 
     def generate(self):
         user_prompt = self.entry.get()
         category = f"{user_prompt} emotion"
         self.app.camera_handler.display_image(category)
-    
-     #-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
     def resize_after_toogle(self):
         global Canvas_image
@@ -359,8 +350,8 @@ class ImageGeneratorUI(customtkinter.CTk):
         except Exception as e:
             print(f"Error in resizing or displaying the image: {e}")
 
-    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
-            
+    # -----------------------------------------------------------------------------------------------------------------------------------------------------------
+
     def save_image_to_mongodb(self, image_bytes, filename):
         try:
             # Convert the image bytes to a PNG format
@@ -370,17 +361,20 @@ class ImageGeneratorUI(customtkinter.CTk):
                     image.save(png_io, format="PNG")
                     png_bytes = png_io.getvalue()
             except IOError:
-                raise Exception("Unable to convert image to PNG - may be invalid image data")
+                raise Exception(
+                    "Unable to convert image to PNG - may be invalid image data")
 
             # Connect to MongoDB
-            connection = MongoClient("mongodb+srv://MoodCraftAi:MoodCraftAi@moodcraftai.uygfyac.mongodb.net/?retryWrites=true&w=majority")
+            connection = MongoClient(
+                "mongodb+srv://MoodCraftAi:MoodCraftAi@moodcraftai.uygfyac.mongodb.net/?retryWrites=true&w=majority")
 
             # Connect to the Database where the images will be stored.
             database = connection['moodCraftAI']
             fs = gridfs.GridFS(database)
 
             # Store the PNG image in GridFS
-            image_id = fs.put(png_bytes, filename=filename,collection='generated_images')
+            image_id = fs.put(png_bytes, filename=filename,
+                              collection='generated_images')
 
             # Update the movie_info with the image reference
             m = str(image_id)
@@ -395,10 +389,14 @@ class ImageGeneratorUI(customtkinter.CTk):
             movies_collection = database['Movies']
             movies_collection.insert_one(generted_art)
 
-            print(f"Image '{filename}' and associated data saved to MongoDB successfully.")
+            print(
+                f"Image '{filename}' and associated data saved to MongoDB successfully.")
 
         except Exception as e:
             print(f"Error saving image to MongoDB: {str(e)}")
+
+
+# Unussed Code----------------------------------------------------------------------------------------------------------------------------------------------------------
 
     # def generate_display_image_Deep_AI(self, emotion):
     #     global Canvas_image
@@ -449,4 +447,23 @@ class ImageGeneratorUI(customtkinter.CTk):
     #     else:
     #         print("Error: No images found in the response.")
 
+        # ------------------------------------------------------------------------------------------------------------------------------ TAB 2
+        # self.label_tab_2 = customtkinter.CTkLabel(
+        #     self.tabview.tab("Settings"), text="CTkLabel on Tab 2")
+        # self.label_tab_2.grid(row=0, column=0, padx=20, pady=20)
+        # ------------------------------------------------------------------------------------------------------------------------------ TAB 3
 
+        # self.appearance_mode_label = customtkinter.CTkLabel(
+        #     self.tabview.tab("Settings"), text="Appearance Mode:", anchor="w")
+        # self.appearance_mode_label.grid(row=0, column=0, padx=20, pady=(10, 0))
+        # self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.tabview.tab("Settings"), values=[
+        #                                                                "Light", "Dark", "System"],                                                                  command=self.change_appearance_mode_event)
+        # self.appearance_mode_optionemenu.grid(
+        #     row=6, column=0, padx=20, pady=(10, 10))
+        # self.scaling_label = customtkinter.CTkLabel(
+        #     self.tabview.tab("Settings"), text="UI Scaling:", anchor="w")
+        # self.scaling_label.grid(row=7, column=0, padx=20, pady=(10, 0))
+        # self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.tabview.tab("Settings"), values=["80%", "90%", "100%", "110%", "120%"],
+        #                                                        command=self.change_scaling_event)
+        # self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 20))
+        # -------------------------------------------------------------------------------------------------------------------------------- TAB 3
