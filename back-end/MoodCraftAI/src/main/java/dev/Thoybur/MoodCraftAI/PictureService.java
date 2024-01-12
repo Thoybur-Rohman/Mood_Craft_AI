@@ -41,9 +41,9 @@ public class PictureService {
     public List<Pictures> getAllPictures() throws IOException {
         List<Pictures> picturesList = pictureInterface.findAll();
         for (Pictures picture : picturesList) {
-            if (picture.getPoster() != null) {
-                ObjectId imageId = new ObjectId(picture.getPoster());
-                picture.setPoster(getImageData(imageId));
+            if (picture.getArt() != null) {
+                ObjectId imageId = new ObjectId(picture.getArt());
+                picture.setArt(getImageData(imageId));
             }
         }
         return picturesList;
@@ -53,9 +53,9 @@ public class PictureService {
         Optional<Pictures> pictureOpt = pictureInterface.findPictureByImdbId(imdbId);
         if (pictureOpt.isPresent()) {
             Pictures picture = pictureOpt.get();
-            if (picture.getPoster() != null) {
-                ObjectId imageId = new ObjectId(picture.getPoster());
-                picture.setPoster(getImageData(imageId));
+            if (picture.getArt() != null) {
+                ObjectId imageId = new ObjectId(picture.getArt());
+                picture.setArt(getImageData(imageId));
             }
         }
         return pictureOpt;

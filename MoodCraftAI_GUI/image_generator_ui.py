@@ -20,6 +20,8 @@ from PIL import Image, ImageTk
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
+import string
+import numpy as np
 
 # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_appearance_mode("Dark")
@@ -378,13 +380,14 @@ class ImageGeneratorUI(customtkinter.CTk):
 
             # Update the movie_info with the image reference
             m = str(image_id)
+            random_id_np = self.generate_random_id_np(10)
 
             # Create and insert the movie document
             generted_art = {
-                "imdbId": ObjectId(),
+                "imdbId": random_id_np,
                 "mood": [],
                 "art": str(image_id),
-                "reviewIds": []
+                "reviews": []
             }
             movies_collection = database['Movies']
             movies_collection.insert_one(generted_art)
@@ -395,7 +398,20 @@ class ImageGeneratorUI(customtkinter.CTk):
         except Exception as e:
             print(f"Error saving image to MongoDB: {str(e)}")
 
+    def generate_random_id_np(self,length=10):
+        """
+        Generates a random string of specified length using NumPy.
 
+        :param length: The length of the random string. Default is 10.
+        :return: A random string of letters and digits.
+        """
+        # Create a sequence of all letters (uppercase and lowercase) and digits
+        characters = string.ascii_letters + string.digits
+
+        # Use NumPy's random.choice to select 'length' characters
+        random_id = ''.join(np.random.choice(list(characters), size=length))
+
+        return random_id
 # Unussed Code----------------------------------------------------------------------------------------------------------------------------------------------------------
 
     # def generate_display_image_Deep_AI(self, emotion):
