@@ -47,13 +47,13 @@ class ImageGeneratorUI(customtkinter.CTk):
         db_thread.start()
 
         # Change to the actual URL when deployed
-        web_app_url = "https://www.youtube.com/"
+        web_app_url = "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io/"
 
         # Generate QR Code
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=6,
+            box_size=4,
             border=2,
         )
         qr.add_data(web_app_url)  # Replace with your data
@@ -184,7 +184,8 @@ class ImageGeneratorUI(customtkinter.CTk):
 
         # Start image generation in a separate thread, checking if emotion is not None
         if emotion is not None:
-            thread = threading.Thread(target=self.threaded_image_generation, args=(emotion,))
+            thread = threading.Thread(
+                target=self.threaded_image_generation, args=(emotion,))
         else:
             thread = threading.Thread(target=self.threaded_image_generation)
 
@@ -257,7 +258,8 @@ class ImageGeneratorUI(customtkinter.CTk):
                 size="1024x1024"
             )
 
-            image_urls = [response['data'][i]['url'] for i in range(len(response['data']))]
+            image_urls = [response['data'][i]['url']
+                          for i in range(len(response['data']))]
 
             for url in image_urls:
                 response = requests.get(url)
@@ -398,7 +400,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         except Exception as e:
             print(f"Error saving image to MongoDB: {str(e)}")
 
-    def generate_random_id_np(self,length=10):
+    def generate_random_id_np(self, length=10):
         """
         Generates a random string of specified length using NumPy.
 
