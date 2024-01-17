@@ -6,7 +6,7 @@ import threading
 import time
 import tkinter
 import tkinter.messagebox
-import customtkinter
+import customtkinter 
 import matplotlib.pyplot as plt
 import openai
 import gridfs
@@ -22,6 +22,8 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 import string
 import numpy as np
+import random
+
 
 # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_appearance_mode("Dark")
@@ -29,6 +31,8 @@ customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("dark-blue")
 global Canvas_image
 Canvas_image = None
+global document_id_to_update
+global device_id
 mongo_client: MongoClient = MongoClient(
     "mongodb+srv://MoodCraftAi:MoodCraftAi@moodcraftai.uygfyac.mongodb.net/?retryWrites=true&w=majority")
 database: Database = mongo_client.get_database("moodCraftAI")
@@ -56,6 +60,7 @@ class ImageGeneratorUI(customtkinter.CTk):
             box_size=4,
             border=2,
         )
+        
         qr.add_data(web_app_url)  # Replace with your data
         qr.make(fit=True)
 
@@ -76,11 +81,6 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
-
-        self.toggle_sidebar_button = customtkinter.CTkButton(
-            self, text="Toggle Sidebar", command=self.toggle_sidebar)
-        # Place the button in a fixed location
-        self.toggle_sidebar_button.grid(row=3, column=0)
 
         # create canvas
         self.canvas = customtkinter.CTkCanvas(self, width=512, height=512)
@@ -109,8 +109,26 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.sidebar_button_1 = customtkinter.CTkButton(
             self.tabview.tab("MoodCraft AI"), command=self.sidebar_button_event)
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
-        self.sidebar_button_2 = customtkinter.CTkButton(
-            self.tabview.tab("MoodCraft AI"), command=self.sidebar_button_event)
+
+        self.toggle_sidebar_button = customtkinter.CTkButton(
+            self, text="Toggle Sidebar", command=self.toggle_sidebar)
+        # Place the button in a fixed location
+        self.toggle_sidebar_button.grid(row=3, column=0)
+        
+        self.qr_label = customtkinter.CTkLabel(
+            self.tabview.tab("MoodCraft AI"), image=qr_photo)
+        self.qr_label.image = qr_photo  # Keep a reference to avoid garbage collection
+        # Adjust row and column as needed
+        self.qr_label.grid(row=2, column=0, padx=0, pady=0)
+
+                # Create a label for the 4-digit number
+        self.number_label = customtkinter.CTkLabel(self.tabview.tab("MoodCraft AI"), 
+                                           text="0000", 
+                                           font=("Helvetica", 20))  # Example font size 20
+        self.number_label.grid(row=3, column=0, padx=5, pady=5)
+
+        self.update_number()
+
 
         # ----------------------------------------------------------------------------------------------------------------------------- TAB 2
 
@@ -131,11 +149,7 @@ class ImageGeneratorUI(customtkinter.CTk):
                                                            command=self.open_input_dialog_event)
         self.string_input_button.grid(row=3, column=0, padx=20, pady=(10, 10))
 
-        self.qr_label = customtkinter.CTkLabel(
-            self.tabview.tab("MoodCraft AI"), image=qr_photo)
-        self.qr_label.image = qr_photo  # Keep a reference to avoid garbage collection
-        # Adjust row and column as needed
-        self.qr_label.grid(row=2, column=0, padx=0, pady=0)
+
 
 
 # set default values ---------------------------------------------------------------------------------------------------------------------
@@ -150,6 +164,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         db_thread.start()
 
     def monitor_db_for_changes(self):
+        global document_id_to_update
         with collection.watch() as stream:
             for change in stream:
                 if change['operationType'] == 'insert':
@@ -158,11 +173,20 @@ class ImageGeneratorUI(customtkinter.CTk):
                     # Only process if this is a new document
                     if new_doc_id != self.last_processed_doc_id:
                         self.last_processed_doc_id = new_doc_id
-                        new_prompt = change['fullDocument']['prompt']
-                        new_art_style = change['fullDocument']['style']
-                        self.update_prompt_and_generate_image(
-                            new_prompt, new_art_style)
+
+                        # Safely access 'prompt' and 'style' keys
+                        new_prompt = change['fullDocument'].get('prompt')
+                        new_art_style = change['fullDocument'].get('style')
+
+                        # Ensure both new_prompt and new_art_style are not None before proceeding
+                        if new_prompt is not None and new_art_style is not None:
+                            document_id_to_update = new_doc_id
+                            self.update_prompt_and_generate_image(
+                                new_prompt, new_art_style)
+                        else:
+                            print("Document missing required fields: 'prompt' or 'style'")
                         time.sleep(10)
+
 
     def update_prompt_and_generate_image(self, new_prompt, new_art_style):
         # Update the prompt in the Tkinter Entry widget
@@ -357,6 +381,8 @@ class ImageGeneratorUI(customtkinter.CTk):
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
     def save_image_to_mongodb(self, image_bytes, filename):
+        global document_id_to_update
+        global device_id
         try:
             # Convert the image bytes to a PNG format
             try:
@@ -394,6 +420,16 @@ class ImageGeneratorUI(customtkinter.CTk):
             movies_collection = database['Movies']
             movies_collection.insert_one(generted_art)
 
+
+            settings_collection = database['settings']
+            settings_collection.update_one(
+            {"_id": ObjectId(document_id_to_update)},
+            {"$set": 
+             {"art": image_id,
+              "device_id": device_id}
+             }
+        )
+
             print(
                 f"Image '{filename}' and associated data saved to MongoDB successfully.")
 
@@ -414,6 +450,18 @@ class ImageGeneratorUI(customtkinter.CTk):
         random_id = ''.join(np.random.choice(list(characters), size=length))
 
         return random_id
+    
+    def update_number(self):
+        global device_id
+        # Generate a random 4-digit number
+        new_number = f"{random.randint(1000, 9999)}"
+
+        device_id = new_number
+        # Update the label
+        self.number_label.configure(text="Device Id: " + new_number)
+        # Schedule the next update after 2 days (2 days * 24 hours * 60 minutes * 60 seconds)
+        threading.Timer(172800, self.update_number).start()
+    
 # Unussed Code----------------------------------------------------------------------------------------------------------------------------------------------------------
 
     # def generate_display_image_Deep_AI(self, emotion):
