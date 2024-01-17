@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoodCraftAI Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f0f8;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .navbar-custom {
+            background-color: #33495e;
+            border-bottom: 3px solid #f0ad4e;
+        }
+        .navbar-custom .navbar-brand,
+        .navbar-custom .navbar-nav .nav-link {
+            color: #fff;
+            transition: color 0.3s ease;
+        }
+        .navbar-custom .navbar-brand:hover,
+        .navbar-custom .navbar-nav .nav-link:hover {
+            color: #f0ad4e;
+        }
+        .container-main {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        .footer {
+            background-color: #33495e;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+        }
+        .btn-custom {
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+        .btn-custom:hover {
+            background-color: #4cae4c;
+        }
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 15px;
+            }
+            .navbar-custom .navbar-nav .nav-link {
+                font-size: 14px;
+            }
+        }
+        .footer-icons {
+            margin-top: 10px;
+        }
+        .footer-icons i {
+            color: white;
+            margin-right: 10px;
+            transition: color 0.3s ease;
+        }
+        .footer-icons i:hover {
+            color: #f0ad4e;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Dark mode toggle styles */
+        .dark-mode {
+            background-color: #333;
+            color: white;
+        }
+        /* Loading Spinner */
+        .loading-spinner {
+            display: none;
+            width: 30px;
+            height: 30px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="/">MoodCraftAI Dashboard</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item"><a class="nav-link" href="/prompts">Prompts</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-main">
+        <div class="form-container">
+            <h2 class="text-center">Welcome to MoodCraftAI</h2>
+            <form id="moodcraftForm" action="/prompts" method="POST">
+                <div class="form-group">
+                    <label for="key">Dalle API Key (optional):</label>
+                    <input type="text" class="form-control" id="key" name="key" placeholder="Enter API Key">
+                </div>
+                <div class="form-group">
+                    <label for="prompt">Prompt:</label>
+                    <input type="text" class="form-control" id="prompt" name="prompt" required placeholder="Enter your prompt">
+                </div>
+                <div class="form-group">
+                    <label for="style">Style:</label>
+                    <select class="form-control" id="style" name="style" required>
+                        <option value="Realistic">Realistic</option>
+                        <option value="Cartoon">Cartoon</option>
+                        <option value="3D Illustration">3D Illustration</option>
+                        <option value="Flat Art">Flat Art</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-custom btn-block">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <span>MoodCraftAI Dashboard &copy; 2024</span>
+            <div class="footer-icons">
+                <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+        // Dark mode toggle script
+        function toggleDarkMode() {
+            var body = document.body;
+            body.classList.toggle("dark-mode");
+        }
+
+        // Improved form validation with inline feedback
+        document.getElementById('moodcraftForm').addEventListener('submit', function(event) {
+            var promptInput = document.getElementById('prompt');
+            if (promptInput.value === '') {
+                promptInput.classList.add('is-invalid');
+                event.preventDefault();
+            } else {
+                promptInput.classList.remove('is-invalid');
+                showLoadingSpinner();
+            }
+        });
+
+        // Show loading spinner
+        function showLoadingSpinner() {
+            var spinner = document.createElement('div');
+            spinner.className = 'loading-spinner';
+            document.body.appendChild(spinner);
+        }
+    </script>
+</body>
+</html>

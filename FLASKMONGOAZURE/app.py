@@ -18,8 +18,6 @@ mongo_client: MongoClient = MongoClient(connection_string)
 database: Database = mongo_client.get_database("moodCraftAI")
 collection: Collection = database.get_collection("settings")
 
-# book = {"book": "Harry Potter" , "pages": "123"}
-# collection.insert_one(book)
 
 # instantiating a new object with 'name'
 app: Flask = Flask(__name__)
@@ -27,140 +25,7 @@ app: Flask = Flask(__name__)
 
 @app.route('/')
 def index():
-    prompts = list(collection.find({}, {"_id": 0, "key": 1, "prompt": 1}))
-    # Generate table rows
-    table_rows = ''.join(
-        [f'<tr><td>{prompt["key"]}</td><td>{prompt["prompt"]}</td></tr>' for prompt in prompts])
-    return '''
-    <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoodCraftAI Dashboard</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <style>
-        body {
-            background-color: #f0f0f8;
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .navbar-custom {
-            background-color: #33495e;
-            border-bottom: 3px solid #f0ad4e;
-        }
-        .navbar-custom .navbar-brand,
-        .navbar-custom .navbar-nav .nav-link {
-            color: #fff;
-        }
-        .navbar-custom .navbar-brand:hover,
-        .navbar-custom .navbar-nav .nav-link:hover {
-            color: #f0ad4e;
-        }
-        .container-main {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .form-container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 500px;
-        }
-        .footer {
-            background-color: #33495e;
-            color: white;
-            text-align: center;
-            padding: 20px 0;
-        }
-        .btn-custom {
-            background-color: #5cb85c;
-            color: white;
-            border: none;
-        }
-        .btn-custom:hover {
-            background-color: #4cae4c;
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            .form-container {
-                padding: 15px;
-            }
-            .navbar-custom .navbar-nav .nav-link {
-                font-size: 14px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-custom">
-        <div class="container">
-            <a class="navbar-brand" href="/">MoodCraftAI Dashboard</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ml-auto">
-                    <li class="nav-item"><a class="nav-link" href="/prompts">Prompts</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container-main">
-        <div class="form-container">
-            <h2 class="text-center">Welcome to MoodCraftAI</h2>
-            <form action="/prompts" method="POST">
-    <div class="form-group">
-        <label for="key">Dalle API Key (optional):</label>
-        <input type="text" class="form-control" id="key" name="key">
-    </div>
-    <div class="form-group">
-        <label for="prompt">Prompt:</label>
-        <input type="text" class="form-control" id="prompt" name="prompt" required>
-    </div>
-    <div class="form-group">
-        <label for="style">Style:</label>
-        <select class="form-control" id="style" name="style" required>
-            <option value="Realistic">Realistic</option>
-            <option value="Cartoon">Cartoon</option>
-            <option value="3D Illustration">3D Illustration</option>
-            <option value="Flat Art">Flat Art</option>
-        </select>
-    </div>
-    <button type="submit" class="btn btn-custom btn-block">Submit</button>
-</form>
-        </div>
-    </div>
-
-    <footer class="footer">
-        <div class="container">
-            <span>MoodCraftAI Dashboard &copy; 2024</span>
-        </div>
-    </footer>
-    <script>
-    function vote(imageId, action) {
-        fetch(`/${action}/${imageId}`, { method: 'POST' })
-        .then(response => response.json())
-        .then(data => {
-            alert(`${action === 'upvote' ? 'Upvoted' : 'Liked'}! Total: ${data.count}`);
-        });
-    }
-    </script>
-
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.0/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-</body>
-</html>
-
-    '''
-
+    return render_template('index.html')
 
 @app.route('/prompts', methods=["GET", "POST"])
 def prompt():
@@ -243,26 +108,26 @@ def prompt():
 
         # Generate HTML content for the gallery
         gallery_content = ''.join([
-            f'''
-            <div class="col-md-4">
-                <div class="card mb-4 shadow-sm">
-                    <div class="zoom-image">
-                        <img src="/image/{novel["image_id"]}" class="card-img-top" alt="Image">
-                    </div>
-                    <div class="card-body">
-                        <p class="card-text">{novel["prompt"]}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="btn-group">                
-                                <a href="/image/{novel["image_id"]}" class="btn btn-sm btn-outline-secondary btn-download" download="Image_{novel["image_id"]}">Download</a>
-                                <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" onclick="copyToClipboard('/image/{novel["image_id"]}')">Copy Link</button>
-                            </div>
+        f'''
+        <div class="col-md-4">
+            <div class="card mb-4 shadow-sm">
+                <div class="zoom-image">
+                    <img src="/image/{novel["image_id"]}" class="card-img-top" alt="Image">
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{novel["prompt"]}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group">                
+                            <a href="/image/{novel["image_id"]}" class="btn btn-sm btn-outline-secondary btn-download" download="Image_{novel["image_id"]}">Download</a>
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" onclick="copyToClipboard('/image/{novel["image_id"]}')">Copy Link</button>
                         </div>
                     </div>
                 </div>
             </div>
-            '''
-            for novel in novels
-        ])
+        </div>
+        '''
+        for novel in novels
+    ])
 
         # Generate the main page with the gallery
         main_page = f'''
@@ -278,29 +143,48 @@ def prompt():
                     background-color: #f0f0f8;
                     font-family: 'Arial', sans-serif;
                 }}
+
                 .container {{
-                    padding: 40px 0;
+                    padding: 20px;
                 }}
+
+                .card {{
+                    border: none;
+                    border-radius: 10px;
+                    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+                    transition: transform 0.3s ease-in-out;
+                }}
+
+                .card:hover {{
+                    transform: scale(1.05);
+                }}
+
                 .card-img-top {{
                     width: 100%;
                     height: auto;
-                    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
-                    transition: transform 0.5s;
+                    border-top-left-radius: 10px;
+                    border-top-right-radius: 10px;
                 }}
-                .card-img-top:hover {{
-                    transform: scale(1.05);
+
+                .card-body {{
+                    padding: 1.5rem;
                 }}
-                .zoom-image {{
-                    overflow: hidden;
-                    position: relative;
-                }}
+
                 .btn-download, .btn-copy {{
-                    transition: background-color 0.3s;
-                }}
-                .btn-download:hover, .btn-copy:hover {{
                     background-color: #007bff;
                     color: #fff;
+                    transition: background-color 0.3s;
+                    border: none;
+                    border-radius: 5px;
+                    margin-right: 10px;
+                    padding: 8px 20px;
                 }}
+
+                .btn-download:hover, .btn-copy:hover {{
+                    background-color: #0056b3;
+                }}
+
+                /* Updated Go Back Button */
                 .go-back-button {{
                     position: fixed;
                     top: 20px;
@@ -308,25 +192,43 @@ def prompt():
                     z-index: 1000;
                     background-color: #007bff;
                     color: #fff;
-                    padding: 10px 20px;
+                    padding: 12px 24px;
                     border: none;
-                    border-radius: 5px;
-                    font-size: 16px;
+                    border-radius: 10px;
+                    font-size: 18px;
+                    text-decoration: none;
+                    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+                    transition: background-color 0.3s, transform 0.3s;
                 }}
+
                 .go-back-button:hover {{
                     background-color: #0056b3;
+                    transform: scale(1.05);
                 }}
-                .prompt-text {{
-                    font-size: 16px;
-                    text-align: center;
-                    margin-top: 10px;
+
+                /* Responsive Styles */
+                @media (max-width: 768px) {{
+                    .container {{
+                        padding: 10px;
+                    }}
+
+                    .card-body {{
+                        padding: 1rem;
+                    }}
+
+                    .go-back-button {{
+                        top: 10px;
+                        left: 10px;
+                        font-size: 16px;
+                        padding: 10px 20px;
+                    }}
                 }}
             </style>
         </head>
         <body>
             <a href="/" class="btn btn-primary go-back-button">Go Back</a>
             <div class="container">
-                <h2 class="text-center">Art Gallery</h2>
+                <h2>Prompts Gallery</h2>
                 <div class="row">
                     {gallery_content}
                 </div>
@@ -340,6 +242,7 @@ def prompt():
         </script>
         </html>
         '''
+
 
         return main_page
 
