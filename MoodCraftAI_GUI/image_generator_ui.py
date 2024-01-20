@@ -23,6 +23,8 @@ from pymongo.database import Database
 import string
 import numpy as np
 import random
+import nltk
+from nltk.corpus import wordnet
 
 
 # Modes: "System" (standard), "Dark", "Light"
@@ -100,6 +102,14 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.tabview.tab("Generate").grid_columnconfigure(0, weight=1)
 
       #  self.tabview.tab("Settings").grid_columnconfigure(0, weight=1)
+        
+        # In the __init__ method of ImageGeneratorUI class
+        self.antonym_toggle = customtkinter.CTkSwitch(self.tabview.tab("Generate"), 
+                                                    text="Antonym Mode", 
+                                                    command=self.antonym_toggle_event)
+        self.antonym_toggle.grid(row=4, column=0, padx=20, pady=(10, 10))
+        self.antonym_mode = False  # To track the state of the toggle
+
 
         # create main entry and button ------------------------------------------------------------------------------------------------ TAB 1
         self.label_tab_2 = customtkinter.CTkLabel(self.tabview.tab(
@@ -157,11 +167,13 @@ class ImageGeneratorUI(customtkinter.CTk):
             text="Toogle Camera")
       #  self.appearance_mode_optionemenu.set("Dark")
       #  self.scaling_optionemenu.set("100%")
-
 # ------------------------------------------------------------------------- METHODS -------------------------------------------------------------------------
         db_thread = threading.Thread(target=self.monitor_db_for_changes)
         db_thread.daemon = True
         db_thread.start()
+
+    def antonym_toggle_event(self):
+        self.antonym_mode = not self.antonym_mode
 
     def monitor_db_for_changes(self):
         global document_id_to_update
@@ -187,7 +199,6 @@ class ImageGeneratorUI(customtkinter.CTk):
                             print("Document missing required fields: 'prompt' or 'style'")
                         time.sleep(10)
 
-
     def update_prompt_and_generate_image(self, new_prompt, new_art_style):
         # Update the prompt in the Tkinter Entry widget
         self.entry.delete(0, 'end')
@@ -200,6 +211,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.app.ui.after(0, self.startgen)
 
 # ------------------------------------------------------------------------PTOGRESSBAR--------------------------------------------------------------------------
+        
     def startgen(self, emotion=None):
         self.progressbar = customtkinter.CTkProgressBar(
             self, orientation="horizontal", indeterminate_speed=2, mode="indeterminate", width=800)
@@ -269,6 +281,10 @@ class ImageGeneratorUI(customtkinter.CTk):
                 user_prompt = self.entry.get()
             else:
                 user_prompt = emotion
+                if self.antonym_mode:
+                # Convert emotion to its antonym
+                    user_prompt = self.get_antonym(user_prompt)
+                
 
             user_prompt += " in style: " + self.optionmenu_artStyle.get()
             print(user_prompt)
@@ -347,7 +363,6 @@ class ImageGeneratorUI(customtkinter.CTk):
 
     def resize_after_toogle(self):
         global Canvas_image
-
         try:
             if Canvas_image:
                 # Decode the base64-encoded image string
@@ -420,15 +435,16 @@ class ImageGeneratorUI(customtkinter.CTk):
             movies_collection = database['Movies']
             movies_collection.insert_one(generted_art)
 
-
-            settings_collection = database['settings']
-            settings_collection.update_one(
-            {"_id": ObjectId(document_id_to_update)},
-            {"$set": 
-             {"art": image_id,
-              "device_id": device_id}
-             }
-        )
+            if document_id_to_update != None:
+                settings_collection = database['settings']
+                settings_collection.update_one(
+                {"_id": ObjectId(document_id_to_update)},
+                {"$set": 
+                {"art": image_id,
+                "device_id": device_id}
+                }
+                )
+                document_id_to_update = None
 
             print(
                 f"Image '{filename}' and associated data saved to MongoDB successfully.")
@@ -461,75 +477,11 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.number_label.configure(text="Device Id: " + new_number)
         # Schedule the next update after 2 days (2 days * 24 hours * 60 minutes * 60 seconds)
         threading.Timer(172800, self.update_number).start()
-    
-# Unussed Code----------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    # def generate_display_image_Deep_AI(self, emotion):
-    #     global Canvas_image
-    #     category = emotion
-    #     # Replace with your actual API key
-    #     api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MDM5OTMwMTUsInVzZXJfaWQiOiI2NTkwZGViMzBjNWYzNWIzMThjOTI5NDYifQ.UPTjRrFnubgH9oiMwpTITMky_eG8vdnRnOUgtoKUkKs"
-
-    #     url1 = "https://api.wizmodel.com/sdapi/v1/txt2img"
-
-    #     payload = json.dumps({
-    #         "prompt": category,
-    #         "steps": 200
-    #     })
-
-    #     headers = {
-    #         'Content-Type': 'application/json',
-    #         'Authorization': f'Bearer {api_key}'
-    #     }
-    #     response = requests.request(
-    #         "POST", url1, headers=headers, data=payload)
-    #     data = response.json()
-    #     print(response.content)
-    #     image_list = data.get("images", [])
-    #     print(image_list)
-    #     if image_list:
-    #         image_string = image_list[0]
-    #         Canvas_image = image_string
-
-    #         # Decode the base64-encoded image string
-    #         image_bytes = base64.b64decode(image_string)
-
-    #         # Save the image to MongoDB using GridFS
-    #         self.save_image_to_mongodb(image_bytes, self.entry.get())
-
-    #         # Open the image
-    #         image = Image.open(BytesIO(image_bytes))
-
-    #         # Get the canvas size
-    #         canvas_width = self.app.ui.canvas.winfo_width()
-    #         canvas_height = self.app.ui.canvas.winfo_height()
-
-    #         # Resize the image to match the canvas size
-    #         photo = ImageTk.PhotoImage(image.resize(
-    #             (canvas_width, canvas_height), resample=Image.LANCZOS))
-    #         self.app.ui.canvas.image = photo
-    #         self.app.ui.canvas.create_image(
-    #             0, 1, anchor="nw", image=self.app.ui.canvas.image)
-    #     else:
-    #         print("Error: No images found in the response.")
-
-        # ------------------------------------------------------------------------------------------------------------------------------ TAB 2
-        # self.label_tab_2 = customtkinter.CTkLabel(
-        #     self.tabview.tab("Settings"), text="CTkLabel on Tab 2")
-        # self.label_tab_2.grid(row=0, column=0, padx=20, pady=20)
-        # ------------------------------------------------------------------------------------------------------------------------------ TAB 3
-
-        # self.appearance_mode_label = customtkinter.CTkLabel(
-        #     self.tabview.tab("Settings"), text="Appearance Mode:", anchor="w")
-        # self.appearance_mode_label.grid(row=0, column=0, padx=20, pady=(10, 0))
-        # self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.tabview.tab("Settings"), values=[
-        #                                                                "Light", "Dark", "System"],                                                                  command=self.change_appearance_mode_event)
-        # self.appearance_mode_optionemenu.grid(
-        #     row=6, column=0, padx=20, pady=(10, 10))
-        # self.scaling_label = customtkinter.CTkLabel(
-        #     self.tabview.tab("Settings"), text="UI Scaling:", anchor="w")
-        # self.scaling_label.grid(row=7, column=0, padx=20, pady=(10, 0))
-        # self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.tabview.tab("Settings"), values=["80%", "90%", "100%", "110%", "120%"],
-        #                                                        command=self.change_scaling_event)
-        # self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 20))
-        # -------------------------------------------------------------------------------------------------------------------------------- TAB 3
+    def get_antonym(self ,word):
+        antonyms = []
+        for syn in wordnet.synsets(word):
+            for l in syn.lemmas():
+                if l.antonyms():
+                    antonyms.append(l.antonyms()[0].name())
+        return antonyms[0] if antonyms else word  # Return the first antonym or the word itself
