@@ -50,6 +50,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.last_processed_doc_id = None
         db_thread = threading.Thread(target=self.monitor_db_for_changes)
         db_thread.daemon = True
+        self.camera_enabled = False
         db_thread.start()
 
         # Change to the actual URL when deployed
@@ -159,6 +160,20 @@ class ImageGeneratorUI(customtkinter.CTk):
                                                            command=self.open_input_dialog_event)
         self.string_input_button.grid(row=3, column=0, padx=20, pady=(10, 10))
 
+        # In the __init__ method of ImageGeneratorUI class, under the TAB 2 section
+
+        self.timer_label = customtkinter.CTkLabel(self.tabview.tab("Generate"), text="Set Timer for Camera:")
+        self.timer_label.grid(row=4, column=0, padx=20, pady=(10, 10), sticky="w")
+
+        self.timer_optionmenu = customtkinter.CTkOptionMenu(self.tabview.tab("Generate"), 
+                                                            values=["1 Minute", "5 Minutes", "1 Hour", "1 Day", "1 Month"])
+        self.timer_optionmenu.grid(row=4, column=0, padx=20, pady=(10, 10))
+
+        self.timer_button = customtkinter.CTkButton(self.tabview.tab("Generate"), text="Start Timer",
+                                                    command=self.start_timer)
+        self.timer_button.grid(row=5, column=0, padx=20, pady=(10, 10))
+
+
 
 
 
@@ -171,6 +186,20 @@ class ImageGeneratorUI(customtkinter.CTk):
         db_thread = threading.Thread(target=self.monitor_db_for_changes)
         db_thread.daemon = True
         db_thread.start()
+    
+    def start_timer(self):
+        self.camera_enabled = True
+        time_mapping = {"1 Minute": 60, "5 Minutes": 300, "1 Hour": 3600, "1 Day": 86400, "1 Month": 2592000}
+        selected_time = self.timer_optionmenu.get()
+        duration = time_mapping.get(selected_time, 60)  # Default to 1 minute if not found
+        self.timer = threading.Timer(duration, self.trigger_camera)
+        self.timer.start()
+
+    def trigger_camera(self):
+        # Check if the camera is enabled and open it
+        if self.camera_enabled:  # Assuming you have a variable to track camera state
+            self.app.camera_handler.open_camera()
+
 
     def antonym_toggle_event(self):
         self.antonym_mode = not self.antonym_mode
@@ -435,7 +464,7 @@ class ImageGeneratorUI(customtkinter.CTk):
             movies_collection = database['Movies']
             movies_collection.insert_one(generted_art)
 
-            if document_id_to_update != None:
+            if document_id_to_update is None:
                 settings_collection = database['settings']
                 settings_collection.update_one(
                 {"_id": ObjectId(document_id_to_update)},
@@ -445,7 +474,6 @@ class ImageGeneratorUI(customtkinter.CTk):
                 }
                 )
                 document_id_to_update = None
-
             print(
                 f"Image '{filename}' and associated data saved to MongoDB successfully.")
 
