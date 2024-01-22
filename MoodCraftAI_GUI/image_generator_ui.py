@@ -50,7 +50,6 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.last_processed_doc_id = None
         db_thread = threading.Thread(target=self.monitor_db_for_changes)
         db_thread.daemon = True
-        self.camera_enabled = False
         db_thread.start()
 
         # Change to the actual URL when deployed
@@ -160,22 +159,23 @@ class ImageGeneratorUI(customtkinter.CTk):
                                                            command=self.open_input_dialog_event)
         self.string_input_button.grid(row=3, column=0, padx=20, pady=(10, 10))
 
-        # In the __init__ method of ImageGeneratorUI class, under the TAB 2 section
-
-        self.timer_label = customtkinter.CTkLabel(self.tabview.tab("Generate"), text="Set Timer for Camera:")
-        self.timer_label.grid(row=4, column=0, padx=20, pady=(10, 10), sticky="w")
-
-        self.timer_optionmenu = customtkinter.CTkOptionMenu(self.tabview.tab("Generate"), 
-                                                            values=["1 Minute", "5 Minutes", "1 Hour", "1 Day", "1 Month"])
-        self.timer_optionmenu.grid(row=4, column=0, padx=20, pady=(10, 10))
-
-        self.timer_button = customtkinter.CTkButton(self.tabview.tab("Generate"), text="Start Timer",
-                                                    command=self.start_timer)
-        self.timer_button.grid(row=5, column=0, padx=20, pady=(10, 10))
 
 
+        # Add camera timer control elements
+        self.camera_timer_options = customtkinter.CTkOptionMenu(self.tabview.tab("Generate"), 
+                                                               values=["1 Minute", "5 Minutes", "1 Hour", 
+                                                                       "5 Hours", "1 Day", "1 Week", "1 Month"])
+        self.camera_timer_options.grid(row=4, column=0, padx=20, pady=(10, 10))
 
+        self.start_camera_button = customtkinter.CTkButton(
+            self.tabview.tab("Generate"), text="Start Camera", command=self.start_camera)
+        self.start_camera_button.grid(row=5, column=0, padx=20, pady=(10, 10))
 
+        self.stop_camera_button = customtkinter.CTkButton(
+            self.tabview.tab("Generate"), text="Stop Camera", command=self.stop_camera)
+        self.stop_camera_button.grid(row=6, column=0, padx=20, pady=(10, 10))
+
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
 
 # set default values ---------------------------------------------------------------------------------------------------------------------
         self.sidebar_button_1.configure(
@@ -186,20 +186,39 @@ class ImageGeneratorUI(customtkinter.CTk):
         db_thread = threading.Thread(target=self.monitor_db_for_changes)
         db_thread.daemon = True
         db_thread.start()
+
+    def handle_camera_timer(self, action):
+        # Convert the selected time to seconds
+        time_dict = {
+            "1 Minute": 60, "5 Minutes": 300, "1 Hour": 3600,
+            "5 Hours": 18000, "1 Day": 86400, "1 Week": 604800, "1 Month": 2592000
+        }
+        self.selected_time_seconds = time_dict.get(self.camera_timer_options.get(), 60)
+
+        if action == "start":
+            if not hasattr(self, 'camera_timer') or not self.camera_timer.is_alive():
+                self.camera_timer = threading.Timer(self.selected_time_seconds, self.timer_callback)
+                self.camera_timer.start()
+        elif action == "stop":
+            if hasattr(self, 'camera_timer'):
+                self.camera_timer.cancel()
     
-    def start_timer(self):
-        self.camera_enabled = True
-        time_mapping = {"1 Minute": 60, "5 Minutes": 300, "1 Hour": 3600, "1 Day": 86400, "1 Month": 2592000}
-        selected_time = self.timer_optionmenu.get()
-        duration = time_mapping.get(selected_time, 60)  # Default to 1 minute if not found
-        self.timer = threading.Timer(duration, self.trigger_camera)
-        self.timer.start()
+    def timer_callback(self):
+        self.app.camera_handler.open_camera()
+        # Reset the timer
+        self.camera_timer = threading.Timer(self.selected_time_seconds, self.timer_callback)
+        self.camera_timer.start()
 
-    def trigger_camera(self):
-        # Check if the camera is enabled and open it
-        if self.camera_enabled:  # Assuming you have a variable to track camera state
-            self.app.camera_handler.open_camera()
+    def start_camera(self):
+        self.handle_camera_timer("start")
 
+    def stop_camera(self):
+        self.handle_camera_timer("stop")
+
+    def on_close(self):
+        # Stop camera and timer before closing
+        self.stop_camera()
+        self.destroy()
 
     def antonym_toggle_event(self):
         self.antonym_mode = not self.antonym_mode
@@ -333,7 +352,7 @@ class ImageGeneratorUI(customtkinter.CTk):
             for url in image_urls:
                 response = requests.get(url)
                 response.raise_for_status()  # Raise an exception for HTTP errors
-                self.save_image_to_mongodb(response.content, user_prompt)
+                # self.save_image_to_mongodb(response.content, user_prompt)
                 Canvas_image = response.content  # Store the raw bytes of the image
 
             # Display the first image
