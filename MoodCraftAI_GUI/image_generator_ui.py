@@ -167,13 +167,10 @@ class ImageGeneratorUI(customtkinter.CTk):
                                                                        "5 Hours", "1 Day", "1 Week", "1 Month"])
         self.camera_timer_options.grid(row=4, column=0, padx=20, pady=(10, 10))
 
-        self.start_camera_button = customtkinter.CTkButton(
-            self.tabview.tab("Generate"), text="Start Camera", command=self.start_camera)
-        self.start_camera_button.grid(row=5, column=0, padx=20, pady=(10, 10))
-
-        self.stop_camera_button = customtkinter.CTkButton(
-            self.tabview.tab("Generate"), text="Stop Camera", command=self.stop_camera)
-        self.stop_camera_button.grid(row=6, column=0, padx=20, pady=(10, 10))
+        self.camera_toggle_button = customtkinter.CTkButton(
+            self.tabview.tab("Generate"), text="Start Camera", fg_color="green", command=self.toggle_camera)
+        self.camera_toggle_button.grid(row=5, column=0, padx=20, pady=(10, 10))
+        self.camera_active = False  # To track the camera state
 
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -186,6 +183,16 @@ class ImageGeneratorUI(customtkinter.CTk):
         db_thread = threading.Thread(target=self.monitor_db_for_changes)
         db_thread.daemon = True
         db_thread.start()
+    
+    def toggle_camera(self):
+        if self.camera_active:
+            self.stop_camera()
+            self.camera_toggle_button.configure(text="Start Camera", fg_color="green")
+            self.camera_active = False
+        else:
+            self.start_camera()
+            self.camera_toggle_button.configure(text="Stop Camera", fg_color="red")
+            self.camera_active = True
 
     def handle_camera_timer(self, action):
         # Convert the selected time to seconds
