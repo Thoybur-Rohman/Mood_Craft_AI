@@ -6,7 +6,7 @@ import threading
 import time
 import tkinter
 import tkinter.messagebox
-import customtkinter 
+import customtkinter
 import matplotlib.pyplot as plt
 import openai
 import gridfs
@@ -62,7 +62,7 @@ class ImageGeneratorUI(customtkinter.CTk):
             box_size=4,
             border=2,
         )
-        
+
         qr.add_data(web_app_url)  # Replace with your data
         qr.make(fit=True)
 
@@ -101,14 +101,13 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.tabview.tab("Generate").grid_columnconfigure(0, weight=1)
 
       #  self.tabview.tab("Settings").grid_columnconfigure(0, weight=1)
-        
+
         # In the __init__ method of ImageGeneratorUI class
-        self.antonym_toggle = customtkinter.CTkSwitch(self.tabview.tab("Generate"), 
-                                                    text="Antonym Mode", 
-                                                    command=self.antonym_toggle_event)
+        self.antonym_toggle = customtkinter.CTkSwitch(self.tabview.tab("Generate"),
+                                                      text="Antonym Mode",
+                                                      command=self.antonym_toggle_event)
         self.antonym_toggle.grid(row=8, column=0, padx=20, pady=(10, 10))
         self.antonym_mode = False  # To track the state of the toggle
-
 
         # create main entry and button ------------------------------------------------------------------------------------------------ TAB 1
         self.label_tab_2 = customtkinter.CTkLabel(self.tabview.tab(
@@ -123,21 +122,20 @@ class ImageGeneratorUI(customtkinter.CTk):
             self, text="Toggle Sidebar", command=self.toggle_sidebar)
         # Place the button in a fixed location
         self.toggle_sidebar_button.grid(row=3, column=0)
-        
+
         self.qr_label = customtkinter.CTkLabel(
             self.tabview.tab("MoodCraft AI"), image=qr_photo)
         self.qr_label.image = qr_photo  # Keep a reference to avoid garbage collection
         # Adjust row and column as needed
         self.qr_label.grid(row=2, column=0, padx=0, pady=0)
 
-                # Create a label for the 4-digit number
-        self.number_label = customtkinter.CTkLabel(self.tabview.tab("MoodCraft AI"), 
-                                           text="0000", 
-                                           font=("Helvetica", 20))  # Example font size 20
+        # Create a label for the 4-digit number
+        self.number_label = customtkinter.CTkLabel(self.tabview.tab("MoodCraft AI"),
+                                                   text="0000",
+                                                   font=("Helvetica", 20))  # Example font size 20
         self.number_label.grid(row=3, column=0, padx=5, pady=5)
 
         self.update_number()
-
 
         # ----------------------------------------------------------------------------------------------------------------------------- TAB 2
 
@@ -158,12 +156,10 @@ class ImageGeneratorUI(customtkinter.CTk):
                                                            command=self.open_input_dialog_event)
         self.string_input_button.grid(row=3, column=0, padx=20, pady=(10, 10))
 
-
-
         # Add camera timer control elements
-        self.camera_timer_options = customtkinter.CTkOptionMenu(self.tabview.tab("Generate"), 
-                                                               values=["1 Minute", "5 Minutes", "1 Hour", 
-                                                                       "5 Hours", "1 Day", "1 Week", "1 Month"])
+        self.camera_timer_options = customtkinter.CTkOptionMenu(self.tabview.tab("Generate"),
+                                                                values=["1 Minute", "5 Minutes", "1 Hour",
+                                                                        "5 Hours", "1 Day", "1 Week", "1 Month"])
         self.camera_timer_options.grid(row=4, column=0, padx=20, pady=(10, 10))
 
         self.camera_toggle_button = customtkinter.CTkButton(
@@ -182,15 +178,17 @@ class ImageGeneratorUI(customtkinter.CTk):
         db_thread = threading.Thread(target=self.monitor_db_for_changes)
         db_thread.daemon = True
         db_thread.start()
-    
+
     def toggle_camera(self):
         if self.camera_active:
             self.stop_camera()
-            self.camera_toggle_button.configure(text="Start Camera", fg_color="green")
+            self.camera_toggle_button.configure(
+                text="Start Camera", fg_color="green")
             self.camera_active = False
         else:
             self.start_camera()
-            self.camera_toggle_button.configure(text="Stop Camera", fg_color="red")
+            self.camera_toggle_button.configure(
+                text="Stop Camera", fg_color="red")
             self.camera_active = True
 
     def handle_camera_timer(self, action):
@@ -199,20 +197,23 @@ class ImageGeneratorUI(customtkinter.CTk):
             "1 Minute": 60, "5 Minutes": 300, "1 Hour": 3600,
             "5 Hours": 18000, "1 Day": 86400, "1 Week": 604800, "1 Month": 2592000
         }
-        self.selected_time_seconds = time_dict.get(self.camera_timer_options.get(), 60)
+        self.selected_time_seconds = time_dict.get(
+            self.camera_timer_options.get(), 60)
 
         if action == "start":
             if not hasattr(self, 'camera_timer') or not self.camera_timer.is_alive():
-                self.camera_timer = threading.Timer(self.selected_time_seconds, self.timer_callback)
+                self.camera_timer = threading.Timer(
+                    self.selected_time_seconds, self.timer_callback)
                 self.camera_timer.start()
         elif action == "stop":
             if hasattr(self, 'camera_timer'):
                 self.camera_timer.cancel()
-    
+
     def timer_callback(self):
         self.app.camera_handler.open_camera()
         # Reset the timer
-        self.camera_timer = threading.Timer(self.selected_time_seconds, self.timer_callback)
+        self.camera_timer = threading.Timer(
+            self.selected_time_seconds, self.timer_callback)
         self.camera_timer.start()
 
     def start_camera(self):
@@ -250,7 +251,8 @@ class ImageGeneratorUI(customtkinter.CTk):
                             self.update_prompt_and_generate_image(
                                 new_prompt, new_art_style)
                         else:
-                            print("Document missing required fields: 'prompt' or 'style'")
+                            print(
+                                "Document missing required fields: 'prompt' or 'style'")
                         time.sleep(10)
 
     def update_prompt_and_generate_image(self, new_prompt, new_art_style):
@@ -265,7 +267,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.app.ui.after(0, self.startgen)
 
 # ------------------------------------------------------------------------PTOGRESSBAR--------------------------------------------------------------------------
-        
+
     def startgen(self, emotion=None):
         self.progressbar = customtkinter.CTkProgressBar(
             self, orientation="horizontal", indeterminate_speed=2, mode="indeterminate", width=800)
@@ -336,9 +338,8 @@ class ImageGeneratorUI(customtkinter.CTk):
             else:
                 user_prompt = emotion
                 if self.antonym_mode:
-                # Convert emotion to its antonym
+                    # Convert emotion to its antonym
                     user_prompt = self.get_antonym(user_prompt)
-                
 
             user_prompt += " in style: " + self.optionmenu_artStyle.get()
             print(user_prompt)
@@ -357,8 +358,13 @@ class ImageGeneratorUI(customtkinter.CTk):
             if response.data and len(response.data) > 0:
                 image_url = response.data[0].url
                 Canvas_image = image_url
-                # Download and display the image
-                self.download_and_display_image(image_url)
+
+                image_response = requests.get(image_url)
+                if image_response.status_code == 200:
+                    image_bytes = image_response.content
+                    self.save_image_to_mongodb(image_bytes, user_prompt)
+                    # Download and display the image
+                    self.download_and_display_image(image_url)
 
         except Exception as e:
             print("An error occurred:", e)
@@ -385,13 +391,12 @@ class ImageGeneratorUI(customtkinter.CTk):
             canvas_height = self.canvas.winfo_height()
 
             # Resize the image to match the canvas size
-            photo = ImageTk.PhotoImage(image.resize((canvas_width, canvas_height), Image.LANCZOS))
+            photo = ImageTk.PhotoImage(image.resize(
+                (canvas_width, canvas_height), Image.LANCZOS))
             self.canvas.image = photo  # Keep a reference.
             self.canvas.create_image(0, 0, anchor="nw", image=photo)
         except Exception as e:
             print(f"Error in displaying the image: {e}")
-
-    
 
     def open_input_dialog_event(self):
         global dalle_e_api_key
@@ -444,7 +449,8 @@ class ImageGeneratorUI(customtkinter.CTk):
                 image = Image.open(image_bytes_io)
 
                 # Resize the image to match the canvas size
-                resized_image = image.resize((canvas_width, canvas_height), Image.LANCZOS)
+                resized_image = image.resize(
+                    (canvas_width, canvas_height), Image.LANCZOS)
                 photo = ImageTk.PhotoImage(resized_image)
 
                 # Update the canvas
@@ -454,7 +460,6 @@ class ImageGeneratorUI(customtkinter.CTk):
                 print("Canvas_image is empty or invalid.")
         except Exception as e:
             print(f"Error in resizing or displaying the image: {e}")
-
 
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -498,15 +503,13 @@ class ImageGeneratorUI(customtkinter.CTk):
             movies_collection = database['Movies']
             movies_collection.insert_one(generted_art)
 
-            if document_id_to_update is None:
+            if document_id_to_update is not None:
                 settings_collection = database['settings']
                 settings_collection.update_one(
                 {"_id": ObjectId(document_id_to_update)},
-                {"$set": 
+                {"$set":
                 {"art": image_id,
-                "device_id": device_id}
-                }
-                )
+                "device_id": device_id}})
                 document_id_to_update = None
             print(
                 f"Image '{filename}' and associated data saved to MongoDB successfully.")
@@ -528,7 +531,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         random_id = ''.join(np.random.choice(list(characters), size=length))
 
         return random_id
-    
+
     def update_number(self):
         global device_id
         # Generate a random 4-digit number
@@ -540,10 +543,11 @@ class ImageGeneratorUI(customtkinter.CTk):
         # Schedule the next update after 2 days (2 days * 24 hours * 60 minutes * 60 seconds)
         threading.Timer(172800, self.update_number).start()
 
-    def get_antonym(self ,word):
+    def get_antonym(self, word):
         antonyms = []
         for syn in wordnet.synsets(word):
             for l in syn.lemmas():
                 if l.antonyms():
                     antonyms.append(l.antonyms()[0].name())
-        return antonyms[0] if antonyms else word  # Return the first antonym or the word itself
+        # Return the first antonym or the word itself
+        return antonyms[0] if antonyms else word
