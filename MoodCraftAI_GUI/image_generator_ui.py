@@ -71,7 +71,6 @@ class ImageGeneratorUI(customtkinter.CTk):
 
         # Resize the QR Code Image
         desired_size = (10, 10)  # Example size, adjust as needed
-        qr_img_resized = qr_img.resize(desired_size, Image.Resampling.LANCZOS)
 
         # Add a boolean attribute to track the sidebar state
         self.is_sidebar_visible = True
@@ -107,7 +106,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.antonym_toggle = customtkinter.CTkSwitch(self.tabview.tab("Generate"), 
                                                     text="Antonym Mode", 
                                                     command=self.antonym_toggle_event)
-        self.antonym_toggle.grid(row=4, column=0, padx=20, pady=(10, 10))
+        self.antonym_toggle.grid(row=8, column=0, padx=20, pady=(10, 10))
         self.antonym_mode = False  # To track the state of the toggle
 
 
@@ -345,7 +344,7 @@ class ImageGeneratorUI(customtkinter.CTk):
             print(user_prompt)
             self.entry.delete(0, 'end')
             # Assuming OpenAI API has an endpoint for image generation (fictional in this context)
-            response = openai.Image.create(
+            response = openai.images.generate(
                 model="dall-e-3",
                 prompt=user_prompt,
                 n=1,
@@ -353,39 +352,46 @@ class ImageGeneratorUI(customtkinter.CTk):
                 size="1024x1024"
             )
 
-            image_urls = [response['data'][i]['url']
-                          for i in range(len(response['data']))]
+            print(response)
 
-            for url in image_urls:
-                response = requests.get(url)
-                response.raise_for_status()  # Raise an exception for HTTP errors
-                # self.save_image_to_mongodb(response.content, user_prompt)
-                Canvas_image = response.content  # Store the raw bytes of the image
-
-            # Display the first image
-            if image_urls:
-                self.display_image(Canvas_image)
+            if response.data and len(response.data) > 0:
+                image_url = response.data[0].url
+                Canvas_image = image_url
+                # Download and display the image
+                self.download_and_display_image(image_url)
 
         except Exception as e:
             print("An error occurred:", e)
 
 # ------------------------------------------------------------------------Display Image--------------------------------------------------------------------------
-
-    def display_image(self, image_bytes):
+    def download_and_display_image(self, image_url):
         try:
-            image = Image.open(io.BytesIO(image_bytes))
+            response = requests.get(image_url)
+            response.raise_for_status()  # This will raise an exception for HTTP errors
 
-            canvas_width = self.app.ui.canvas.winfo_width()
-            canvas_height = self.app.ui.canvas.winfo_height()
+            # Convert the response content into a BytesIO object
+            image_bytes_io = BytesIO(response.content)
+
+            # Display the image
+            self.display_image(image_bytes_io)
+        except Exception as e:
+            print(f"Error downloading or displaying the image: {e}")
+
+    def display_image(self, image_bytes_io):
+        try:
+            image = Image.open(image_bytes_io)
+
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
 
             # Resize the image to match the canvas size
-            photo = ImageTk.PhotoImage(image.resize(
-                (canvas_width, canvas_height), resample=Image.LANCZOS))
-            self.app.ui.canvas.image = photo
-            self.app.ui.canvas.create_image(
-                0, 0, anchor="nw", image=self.app.ui.canvas.image)
+            photo = ImageTk.PhotoImage(image.resize((canvas_width, canvas_height), Image.LANCZOS))
+            self.canvas.image = photo  # Keep a reference.
+            self.canvas.create_image(0, 0, anchor="nw", image=photo)
         except Exception as e:
-            print("Error in displaying the image:", e)
+            print(f"Error in displaying the image: {e}")
+
+    
 
     def open_input_dialog_event(self):
         global dalle_e_api_key
@@ -420,33 +426,35 @@ class ImageGeneratorUI(customtkinter.CTk):
         global Canvas_image
         try:
             if Canvas_image:
-                # Decode the base64-encoded image string
-                # image_bytes = base64.b64decode(Canvas_image)
-                # image = Image.open(BytesIO(image_bytes))
-
                 # Allow the UI to update its layout
                 self.update_idletasks()
 
                 # Get the updated canvas size
-                canvas_width = self.app.ui.canvas.winfo_width()
-                canvas_height = self.app.ui.canvas.winfo_height()
+                canvas_width = self.canvas.winfo_width()
+                canvas_height = self.canvas.winfo_height()
 
-                image = Image.open(io.BytesIO(Canvas_image))
+                # Download the image from the URL stored in Canvas_image
+                response = requests.get(Canvas_image)
+                response.raise_for_status()  # This will raise an exception for HTTP errors
 
-                canvas_width = self.app.ui.canvas.winfo_width()
-                canvas_height = self.app.ui.canvas.winfo_height()
+                # Convert the response content into a BytesIO object
+                image_bytes_io = BytesIO(response.content)
+
+                # Open the image
+                image = Image.open(image_bytes_io)
 
                 # Resize the image to match the canvas size
-                photo = ImageTk.PhotoImage(image.resize(
-                    (canvas_width, canvas_height), resample=Image.LANCZOS))
-                self.app.ui.canvas.image = photo
-                self.app.ui.canvas.create_image(
-                    0, 0, anchor="nw", image=self.app.ui.canvas.image)
+                resized_image = image.resize((canvas_width, canvas_height), Image.LANCZOS)
+                photo = ImageTk.PhotoImage(resized_image)
 
+                # Update the canvas
+                self.canvas.image = photo  # Keep a reference to avoid garbage collection
+                self.canvas.create_image(0, 0, anchor="nw", image=photo)
             else:
                 print("Canvas_image is empty or invalid.")
         except Exception as e:
             print(f"Error in resizing or displaying the image: {e}")
+
 
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
