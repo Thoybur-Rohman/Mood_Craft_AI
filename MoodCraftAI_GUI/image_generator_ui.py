@@ -33,7 +33,7 @@ customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("dark-blue")
 global Canvas_image
 Canvas_image = None
-global document_id_to_update
+document_id_to_update = None
 global device_id
 mongo_client: MongoClient = MongoClient(
     "mongodb+srv://MoodCraftAi:MoodCraftAi@moodcraftai.uygfyac.mongodb.net/?retryWrites=true&w=majority")
@@ -429,37 +429,46 @@ class ImageGeneratorUI(customtkinter.CTk):
 
     def resize_after_toogle(self):
         global Canvas_image
+
+        # Check if the image URL is valid
+        if not Canvas_image:
+            print("Canvas_image is empty or invalid.")
+            return
+
+        # Allow the UI to update its layout
+        self.update_idletasks()
+
+        # Start a background thread for downloading and processing the image
+        thread = threading.Thread(target=self.process_image, args=(Canvas_image,), daemon=True)
+        thread.start()
+
+    
+    def process_image(self, url):
         try:
-            if Canvas_image:
-                # Allow the UI to update its layout
-                self.update_idletasks()
+            response = requests.get(url)
+            response.raise_for_status()
 
-                # Get the updated canvas size
-                canvas_width = self.canvas.winfo_width()
-                canvas_height = self.canvas.winfo_height()
+            image_bytes_io = BytesIO(response.content)
+            image = Image.open(image_bytes_io)
 
-                # Download the image from the URL stored in Canvas_image
-                response = requests.get(Canvas_image)
-                response.raise_for_status()  # This will raise an exception for HTTP errors
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
 
-                # Convert the response content into a BytesIO object
-                image_bytes_io = BytesIO(response.content)
+            resized_image = image.resize((canvas_width, canvas_height), Image.LANCZOS)
+            photo = ImageTk.PhotoImage(resized_image)
 
-                # Open the image
-                image = Image.open(image_bytes_io)
-
-                # Resize the image to match the canvas size
-                resized_image = image.resize(
-                    (canvas_width, canvas_height), Image.LANCZOS)
-                photo = ImageTk.PhotoImage(resized_image)
-
-                # Update the canvas
-                self.canvas.image = photo  # Keep a reference to avoid garbage collection
-                self.canvas.create_image(0, 0, anchor="nw", image=photo)
-            else:
-                print("Canvas_image is empty or invalid.")
+            # Schedule the update_canvas method to run on the main thread
+            self.canvas.after(0, self.update_canvas, photo)
         except Exception as e:
-            print(f"Error in resizing or displaying the image: {e}")
+            print(f"Error in processing the image: {e}")
+
+    
+    def update_canvas(self, photo):
+        try:
+            self.canvas.image = photo
+            self.canvas.create_image(0, 0, anchor="nw", image=photo)
+        except Exception as e:
+            print(f"Error in updating the canvas: {e}")
 
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
