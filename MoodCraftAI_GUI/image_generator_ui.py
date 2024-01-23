@@ -25,6 +25,9 @@ import numpy as np
 import random
 import nltk
 from nltk.corpus import wordnet
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel
+from PyQt5.QtCore import Qt
 
 
 # Modes: "System" (standard), "Dark", "Light"
@@ -118,16 +121,24 @@ class ImageGeneratorUI(customtkinter.CTk):
             self.tabview.tab("MoodCraft AI"), command=self.sidebar_button_event)
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
 
+        background_color = "#ffffff"  # Replace with the color of your app's background
+
+        # Create and place the toggle sidebar button
         self.toggle_sidebar_button = customtkinter.CTkButton(
-            self, text="Toggle Sidebar", command=self.toggle_sidebar)
+            self,
+            command=self.toggle_sidebar,
+            text="< Toggle", width=5, height=5
+        )
+        self.toggle_sidebar_button.grid(row=2, column=0 )
+       
         # Place the button in a fixed location
-        self.toggle_sidebar_button.grid(row=3, column=0)
+        self.toggle_sidebar_button.grid(row=1, column=0)
 
         self.qr_label = customtkinter.CTkLabel(
             self.tabview.tab("MoodCraft AI"), image=qr_photo)
         self.qr_label.image = qr_photo  # Keep a reference to avoid garbage collection
         # Adjust row and column as needed
-        self.qr_label.grid(row=2, column=0, padx=0, pady=0)
+        self.qr_label.grid(row=1, column=0, padx=0, pady=0)
 
         # Create a label for the 4-digit number
         self.number_label = customtkinter.CTkLabel(self.tabview.tab("MoodCraft AI"),
@@ -271,7 +282,7 @@ class ImageGeneratorUI(customtkinter.CTk):
     def startgen(self, emotion=None):
         self.progressbar = customtkinter.CTkProgressBar(
             self, orientation="horizontal", indeterminate_speed=2, mode="indeterminate", width=800)
-        self.progressbar.grid(row=3, column=1, padx=20, pady=10)
+        self.progressbar.grid(row=2, column=1, padx=5, pady=5)
         self.progressbar.start()
 
         # Start image generation in a separate thread, checking if emotion is not None
@@ -309,6 +320,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         # Show or hide the sidebar based on the state
         if self.is_sidebar_visible:
             self.tabview.grid()
+            self.toggle_sidebar_button.configure(text="< Toggle", fg_color="#333333",width=5, height=5)
             # Ensure tabview column does not expand
             self.grid_columnconfigure(0, weight=0)
             # Reset the canvas to its original column
@@ -319,8 +331,9 @@ class ImageGeneratorUI(customtkinter.CTk):
             self.tabview.grid_remove()
             # Expand canvas to cover tabview's column
             self.canvas.grid(column=0, columnspan=2)
-            # Add a button to toggle the sidebar
-            self.toggle_sidebar_button.grid(row=3, column=0)
+            self.toggle_sidebar_button.configure(width=2, height=1,text=">", fg_color="transparent")
+            # Place the button to toggle the sidebar
+            self.toggle_sidebar_button.grid(row=2, column=0)
             self.resize_after_toogle()
     # Function to generate image from detected emotion
 
