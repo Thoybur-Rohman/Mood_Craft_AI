@@ -3,7 +3,7 @@ from bson.objectid import ObjectId
 import bson
 from dotenv import load_dotenv
 # Import jsonify here
-from flask import Flask, render_template, request, Response, jsonify
+from flask import Flask, render_template, request, Response, jsonify , redirect, url_for,render_template_string
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
@@ -30,73 +30,24 @@ def index():
 @app.route('/prompts', methods=["GET", "POST"])
 def prompt():
     if request.method == 'POST':
-        # CREATE
-        key = request.form['key']
-        prompt = request.form['prompt']
-        art_style = request.form['style']
+        # Retrieve form data
+        prompt = request.form['prompt']  # Prompt, required
+        device_id = request.form['deviceId']  # Device ID, required
+        art_style = request.form['style']  # Art Style, required
 
-        # insert new book into books collection in MongoDB
-        collection.insert_one(
-            {"key": key, "prompt": prompt, "style": art_style})
-        return f'''
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Prompt Added</title>
-                <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-                <style>
-                    body {{ 
-                        font-family: 'Arial', sans-serif; 
-                        background-color: #e9ecef; 
-                        margin: 0; 
-                        padding-top: 40px; 
-                    }}
-                    .container {{ 
-                        max-width: 600px; 
-                        margin: auto; 
-                    }}
-                    .message-box {{ 
-                        background-color: white; 
-                        padding: 30px; 
-                        border-radius: 10px; 
-                        box-shadow: 0 4px 8px rgba(0,0,0,0.15); 
-                        text-align: center; 
-                    }}
-                    .btn-back {{ 
-                        color: white; 
-                        background-color: #28a745; 
-                        text-decoration: none; 
-                        padding: 10px 20px; 
-                        border-radius: 5px; 
-                        margin-top: 20px; 
-                        display: inline-block; 
-                    }}
-                    .btn-back:hover {{ 
-                        background-color: #218838; 
-                    }}
-                    h2 {{
-                        color: #333;
-                    }}
-                    p {{
-                        color: #555;
-                        font-size: 1.1rem;
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="message-box">
-                        <h2>Prompt Added Successfully</h2>
-                        <p>The following prompt has been successfully added:</p>
-                        <p class="text-success"><strong>"{prompt}"</strong></p>
-                        <a href="/" class="btn-back">Go back to the form</a>
-                    </div>
-                </div>
-            </body>
-            </html>
-            '''
+        # DALL-E ID is optional, check if it's provided
+        dalle_id = request.form.get('dalleKey', '')
+
+        # Insert new record into collection in MongoDB
+        collection.insert_one({
+            "device_id": device_id,
+            "dalle_key": dalle_id,
+            "prompt": prompt,
+            "style": art_style
+        })
+
+        return redirect(url_for('confirmation', prompt=prompt))
+
     elif request.method == 'GET':
         prompts = list(collection.find())
         novels = []
@@ -245,6 +196,67 @@ def prompt():
 
 
         return main_page
+    
+
+@app.route('/confirmation/<prompt>')
+def confirmation(prompt):
+    return render_template_string('''
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Prompt Confirmation</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    text-align: center;
+                    color: #333;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 20px auto;
+                    padding: 20px;
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                }
+                h2 {
+                    color: #5cb85c;
+                }
+                p {
+                    font-size: 16px;
+                    line-height: 1.6;
+                }
+                a {
+                    display: inline-block;
+                    margin-top: 20px;
+                    padding: 10px 20px;
+                    background-color: #5cb85c;
+                    color: white;
+                    border-radius: 5px;
+                    text-decoration: none;
+                    transition: background-color 0.3s ease;
+                }
+                a:hover {
+                    background-color: #4cae4c;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>Prompt Added Successfully</h2>
+                <p>The following prompt has been successfully added:</p>
+                <p><strong>{{ prompt }}</strong></p>
+                <a href="/">Add another prompt</a>
+            </div>
+        </body>
+        </html>
+    ''', prompt=prompt)
+
 
 @app.route('/image/<image_id>')
 def serve_image(image_id):
@@ -264,6 +276,11 @@ def serve_image(image_id):
         return Response(file.read(), mimetype='image/png')
     except gridfs.errors.NoFile:
         return 'Image not found', 404
+
+
+
+
+
 
 
 if __name__ == '__main__':

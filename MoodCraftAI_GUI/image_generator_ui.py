@@ -38,6 +38,7 @@ global Canvas_image
 Canvas_image = None
 document_id_to_update = None
 global device_id
+device_id = None
 mongo_client: MongoClient = MongoClient(
     "mongodb+srv://MoodCraftAi:MoodCraftAi@moodcraftai.uygfyac.mongodb.net/?retryWrites=true&w=majority")
 database: Database = mongo_client.get_database("moodCraftAI")
@@ -127,9 +128,10 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.toggle_sidebar_button = customtkinter.CTkButton(
             self,
             command=self.toggle_sidebar,
-            text="< Toggle", width=5, height=5
+            text="<", width=4, height=4,fg_color="transparent"
         )
         self.toggle_sidebar_button.grid(row=2, column=0 )
+        self.toggle_sidebar_button.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
        
         # Place the button in a fixed location
         self.toggle_sidebar_button.grid(row=1, column=0)
@@ -242,29 +244,33 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.antonym_mode = not self.antonym_mode
 
     def monitor_db_for_changes(self):
-        global document_id_to_update
+        global document_id_to_update, device_id  # Ensure device_id is accessible globally
         with collection.watch() as stream:
             for change in stream:
                 if change['operationType'] == 'insert':
                     new_doc_id = change['documentKey']['_id']
 
-                    # Only process if this is a new document
-                    if new_doc_id != self.last_processed_doc_id:
-                        self.last_processed_doc_id = new_doc_id
+                    # Safely access 'device_id', 'prompt', and 'style' keys
+                    new_device_id = change['fullDocument'].get('device_id')
+                    new_prompt = change['fullDocument'].get('prompt')
+                    new_art_style = change['fullDocument'].get('style')
 
-                        # Safely access 'prompt' and 'style' keys
-                        new_prompt = change['fullDocument'].get('prompt')
-                        new_art_style = change['fullDocument'].get('style')
+                    # Check if the device_id from the document matches the current device_id
+                    if new_device_id == device_id:
+                        # Only process if this is a new document and device_id matches
+                        if new_doc_id != self.last_processed_doc_id:
+                            self.last_processed_doc_id = new_doc_id
 
-                        # Ensure both new_prompt and new_art_style are not None before proceeding
-                        if new_prompt is not None and new_art_style is not None:
-                            document_id_to_update = new_doc_id
-                            self.update_prompt_and_generate_image(
-                                new_prompt, new_art_style)
-                        else:
-                            print(
-                                "Document missing required fields: 'prompt' or 'style'")
-                        time.sleep(10)
+                            # Ensure both new_prompt and new_art_style are not None before proceeding
+                            if new_prompt is not None and new_art_style is not None:
+                                document_id_to_update = new_doc_id
+                                self.update_prompt_and_generate_image(new_prompt, new_art_style)
+                            else:
+                                print("Document missing required fields: 'prompt' or 'style'")
+                    else:
+                        print("Device ID does not match")
+
+                    time.sleep(10)
 
     def update_prompt_and_generate_image(self, new_prompt, new_art_style):
         # Update the prompt in the Tkinter Entry widget
@@ -281,7 +287,7 @@ class ImageGeneratorUI(customtkinter.CTk):
 
     def startgen(self, emotion=None):
         self.progressbar = customtkinter.CTkProgressBar(
-            self, orientation="horizontal", indeterminate_speed=2, mode="indeterminate", width=800)
+            self, orientation="horizontal", indeterminate_speed=3, mode="indeterminate", width=950)
         self.progressbar.grid(row=2, column=1, padx=5, pady=5)
         self.progressbar.start()
 
@@ -320,7 +326,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         # Show or hide the sidebar based on the state
         if self.is_sidebar_visible:
             self.tabview.grid()
-            self.toggle_sidebar_button.configure(text="< Toggle", fg_color="#333333",width=5, height=5)
+            self.toggle_sidebar_button.configure(text="<", fg_color="transparent",width=3, height=3,)
             # Ensure tabview column does not expand
             self.grid_columnconfigure(0, weight=0)
             # Reset the canvas to its original column
@@ -331,7 +337,7 @@ class ImageGeneratorUI(customtkinter.CTk):
             self.tabview.grid_remove()
             # Expand canvas to cover tabview's column
             self.canvas.grid(column=0, columnspan=2)
-            self.toggle_sidebar_button.configure(width=2, height=1,text=">", fg_color="transparent")
+            self.toggle_sidebar_button.configure(width=1, height=1,text=">", fg_color="transparent")
             # Place the button to toggle the sidebar
             self.toggle_sidebar_button.grid(row=2, column=0)
             self.resize_after_toogle()
@@ -439,7 +445,6 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.app.camera_handler.display_image(category)
 
      # -----------------------------------------------------------------------------------------------------------------------------------------------------------
-
     def resize_after_toogle(self):
         global Canvas_image
 
@@ -455,7 +460,6 @@ class ImageGeneratorUI(customtkinter.CTk):
         thread = threading.Thread(target=self.process_image, args=(Canvas_image,), daemon=True)
         thread.start()
 
-    
     def process_image(self, url):
         try:
             response = requests.get(url)
@@ -467,21 +471,29 @@ class ImageGeneratorUI(customtkinter.CTk):
             canvas_width = self.canvas.winfo_width()
             canvas_height = self.canvas.winfo_height()
 
-            resized_image = image.resize((canvas_width, canvas_height), Image.LANCZOS)
-            photo = ImageTk.PhotoImage(resized_image)
+            # Use a faster resizing algorithm (lower quality but faster)
+            resized_image = image.resize((canvas_width, canvas_height), Image.NEAREST)
 
-            # Schedule the update_canvas method to run on the main thread
-            self.canvas.after(0, self.update_canvas, photo)
+            # Process the image data and prepare for Tkinter
+            self.prepare_image_for_tkinter(resized_image)
         except Exception as e:
             print(f"Error in processing the image: {e}")
 
-    
+    def prepare_image_for_tkinter(self, resized_image):
+        # Convert the resized image to a format that can be used in Tkinter
+        image_tk = ImageTk.PhotoImage(resized_image)
+
+        # Schedule the update_canvas method to run on the main thread
+        self.canvas.after(0, lambda: self.update_canvas(image_tk))
+
     def update_canvas(self, photo):
         try:
-            self.canvas.image = photo
+            # Keep a reference to the PhotoImage object
+            self.canvas_image_reference = photo
             self.canvas.create_image(0, 0, anchor="nw", image=photo)
         except Exception as e:
             print(f"Error in updating the canvas: {e}")
+
 
     # -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -556,12 +568,17 @@ class ImageGeneratorUI(customtkinter.CTk):
 
     def update_number(self):
         global device_id
-        # Generate a random 4-digit number
-        new_number = f"{random.randint(1000, 9999)}"
 
-        device_id = new_number
+        # Generate a random mix of 7 uppercase, lowercase letters, and digits
+        random_chars = ''.join(random.choices(string.ascii_letters + string.digits, k=7))
+
+        # Prepend '#' to make it 8 characters in total
+        new_device_id = f"#{random_chars}"
+
+        device_id = new_device_id
         # Update the label
-        self.number_label.configure(text="Device Id: " + new_number)
+        self.number_label.configure(text="Device Id: " + new_device_id)
+
         # Schedule the next update after 2 days (2 days * 24 hours * 60 minutes * 60 seconds)
         threading.Timer(172800, self.update_number).start()
 
