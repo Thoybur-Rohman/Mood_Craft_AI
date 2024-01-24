@@ -3,7 +3,7 @@ from bson.objectid import ObjectId
 import bson
 from dotenv import load_dotenv
 # Import jsonify here
-from flask import Flask, render_template, request, Response, jsonify , redirect, url_for,render_template_string
+from flask import Flask, render_template, request, Response, jsonify, redirect, url_for, render_template_string
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
@@ -27,6 +27,7 @@ app: Flask = Flask(__name__)
 def index():
     return render_template('index.html')
 
+
 @app.route('/prompts', methods=["GET", "POST"])
 def prompt():
     if request.method == 'POST':
@@ -49,17 +50,23 @@ def prompt():
         return redirect(url_for('confirmation', prompt=prompt))
 
     elif request.method == 'GET':
-        prompts = list(collection.find())
+        device_id_query = request.args.get('device_id', '')
+
+        if device_id_query:
+            prompts = list(collection.find({"device_id": device_id_query}))
+        else:
+            prompts = list(collection.find())
+
         novels = []
         for title in prompts:
-            book_prompt = title.get("prompt")
+            prompt = title.get("prompt")
             # Replace with your actual field name for the GridFS image ID
             image_id = title.get("art")
-            novels.insert(0, {"prompt": book_prompt, "image_id": image_id})
+            novels.insert(0, {"prompt": prompt, "image_id": image_id})
 
         # Generate HTML content for the gallery
         gallery_content = ''.join([
-        f'''
+            f'''
         <div class="col-md-4">
             <div class="card mb-4 shadow-sm">
                 <div class="zoom-image">
@@ -70,133 +77,194 @@ def prompt():
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="btn-group">                
                             <a href="/image/{novel["image_id"]}" class="btn btn-sm btn-outline-secondary btn-download" download="Image_{novel["image_id"]}">Download</a>
-                            <button type="button" class="btn btn-sm btn-outline-secondary btn-copy" onclick="copyToClipboard('/image/{novel["image_id"]}')">Copy Link</button>
+                            <button class="btn btn-sm btn-info btn-preview" data-toggle="modal" data-target="#previewModal" data-image-id="{novel["image_id"]}">Preview</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         '''
-        for novel in novels
-    ])
+            for novel in novels
+        ])
 
-        # Generate the main page with the gallery
-        main_page = f'''
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Prompts Gallery</title>
-            <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-            <style>
-                body {{
-                    background-color: #f0f0f8;
-                    font-family: 'Arial', sans-serif;
-                }}
-
-                .container {{
-                    padding: 20px;
-                }}
-
-                .card {{
-                    border: none;
-                    border-radius: 10px;
-                    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-                    transition: transform 0.3s ease-in-out;
-                }}
-
-                .card:hover {{
-                    transform: scale(1.05);
-                }}
-
-                .card-img-top {{
+    # Generate the main page with the gallery
+    return render_template_string(f'''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Prompts Gallery</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+        <style>
+            body {{
+                background-color: #f8f9fa;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }}
+            .container {{
+                padding: 20px;
+                max-width: 1200px;
+                margin: auto;
+            }}
+            .sticky-button {{
+                position: sticky;
+                top: 20px;
+                z-index: 1;
+            }}
+            .search-bar {{
+                margin-bottom: 30px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }}
+            .search-input {{
+                flex-grow: 1;
+                margin-right: 10px;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                font-size: 16px;
+                outline: none;
+            }}
+            .search-button {{
+                white-space: nowrap;
+                padding: 10px 20px;
+                font-size: 16px;
+                border: none;
+                background-color: #007bff;
+                color: #fff;
+                border-radius: 5px;
+                cursor: pointer;
+            }}
+            .search-button:hover {{
+                background-color: #0056b3;
+            }}
+            .loading {{
+                text-align: center;
+                margin-top: 20px;
+            }}
+            .card {{
+                border-radius: 10px;
+                overflow: hidden;
+                transition: transform 0.3s ease;
+                margin-bottom: 20px;
+            }}
+            .card:hover {{
+                transform: scale(1.03);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            }}
+            .card-img-top {{
+                height: 250px;
+                object-fit: cover;
+            }}
+            .card-title {{
+                font-size: 1.1em;
+                margin-top: 10px;
+            }}
+            @media (max-width: 576px) {{
+                .search-input, .search-button {{
                     width: 100%;
-                    height: auto;
-                    border-top-left-radius: 10px;
-                    border-top-right-radius: 10px;
+                    margin: 5px 0;
                 }}
-
-                .card-body {{
-                    padding: 1.5rem;
-                }}
-
-                .btn-download, .btn-copy {{
-                    background-color: #007bff;
-                    color: #fff;
-                    transition: background-color 0.3s;
-                    border: none;
-                    border-radius: 5px;
-                    margin-right: 10px;
-                    padding: 8px 20px;
-                }}
-
-                .btn-download:hover, .btn-copy:hover {{
-                    background-color: #0056b3;
-                }}
-
-                /* Updated Go Back Button */
-                .go-back-button {{
-                    position: fixed;
-                    top: 20px;
-                    left: 20px;
-                    z-index: 1000;
-                    background-color: #007bff;
-                    color: #fff;
-                    padding: 12px 24px;
-                    border: none;
-                    border-radius: 10px;
-                    font-size: 18px;
-                    text-decoration: none;
-                    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-                    transition: background-color 0.3s, transform 0.3s;
-                }}
-
-                .go-back-button:hover {{
-                    background-color: #0056b3;
-                    transform: scale(1.05);
-                }}
-
-                /* Responsive Styles */
-                @media (max-width: 768px) {{
-                    .container {{
-                        padding: 10px;
-                    }}
-
-                    .card-body {{
-                        padding: 1rem;
-                    }}
-
-                    .go-back-button {{
-                        top: 10px;
-                        left: 10px;
-                        font-size: 16px;
-                        padding: 10px 20px;
-                    }}
-                }}
-            </style>
-        </head>
-        <body>
-            <a href="/" class="btn btn-primary go-back-button">Go Back</a>
-            <div class="container">
-                <h2>Prompts Gallery</h2>
-                <div class="row">
-                    {gallery_content}
+            }}
+            .image-hover:hover {{
+                transform: scale(1.1);
+                transition: transform 0.3s ease;
+            }}
+            .loading-overlay {{
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(255, 255, 255, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            }} 
+            .image-caption {{
+            position: absolute;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            width: 100%;
+            text-align: center;
+            padding: 5px;
+            display: none;
+            }}
+            .card:hover .image-caption {{
+                display: block;
+            }}
+                                           
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2 class="text-center my-4">Prompts Gallery</h2>
+            
+            <!-- Sticky Back Button -->
+            <a href="/" class="btn btn-secondary sticky-button" id="backButton">Back</a>
+            
+            <div class="search-bar">
+                <form action="/prompts" method="get" class="form-inline">
+                    <input type="text" name="device_id" class="form-control search-input" placeholder="Enter Device ID" value="{device_id_query}">
+                    <button type="submit" class="btn btn-primary search-button">Search</button>
+                </form>
+            </div>
+            
+            <div id="loadingOverlay" class="loading-overlay">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
                 </div>
             </div>
-        </body>
-        <script>
-            function copyToClipboard(text) {{
-                navigator.clipboard.writeText(text);
-                alert("Link copied to clipboard");
-            }}
+            
+            <div class="row" id="gallery">
+                {gallery_content}
+            </div>
+        </div>
+
+        <!-- Modal for Image Preview -->
+        <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <img class="modal-image img-fluid" src="" alt="Preview">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- JavaScript to handle the sticky back button, image preview, and loading indicator -->
+         <script>
+            document.addEventListener("DOMContentLoaded", function() {{
+                updatePreviewButtons();
+                document.querySelector(".loading").style.display = "none";
+            }});
+
+            function updatePreviewButtons() {{
+                var previewButtons = document.querySelectorAll(".btn-preview");
+                var modalImage = document.querySelector(".modal-image");
+
+                previewButtons.forEach(function(button) {{
+                    button.addEventListener("click", function() {{
+                        var imageId = button.getAttribute("data-image-id");
+                        modalImage.setAttribute("src", "/image/" + imageId);
+                    }});
+                }});
+            }};
+             // Enhanced Image Loading
+            window.onload = function() {{
+            document.getElementById("loadingOverlay").style.display = "none";
+             }};
+            
         </script>
-        </html>
-        '''
+    </body>
+    </html>
+    ''')
 
-
-        return main_page
-    
 
 @app.route('/confirmation/<prompt>')
 def confirmation(prompt):
@@ -276,11 +344,6 @@ def serve_image(image_id):
         return Response(file.read(), mimetype='image/png')
     except gridfs.errors.NoFile:
         return 'Image not found', 404
-
-
-
-
-
 
 
 if __name__ == '__main__':
