@@ -28,6 +28,7 @@ from nltk.corpus import wordnet
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel
 from PyQt5.QtCore import Qt
+from PIL import Image, ImageTk
 
 
 # Modes: "System" (standard), "Dark", "Light"
@@ -53,8 +54,11 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.app = app
         self.last_processed_doc_id = None
         db_thread = threading.Thread(target=self.monitor_db_for_changes)
+        photos_thread = threading.Thread(target=self.monitor_photos_collection)
         db_thread.daemon = True
+        photos_thread.daemon = True
         db_thread.start()
+        photos_thread.start()
 
         # Change to the actual URL when deployed
         web_app_url = "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io/"
@@ -242,6 +246,64 @@ class ImageGeneratorUI(customtkinter.CTk):
 
     def antonym_toggle_event(self):
         self.antonym_mode = not self.antonym_mode
+    
+
+    def monitor_photos_collection(self):
+        global device_id
+        photos_collection = database.get_collection("photos")
+        with photos_collection.watch() as stream:
+            for change in stream:
+                try:
+                    if change['operationType'] == 'insert':
+                        # Directly use 'fullDocument' for 'insert' operations
+                        new_device_id = change['fullDocument'].get('device_id')
+                        new_image_id = change['fullDocument'].get('image_id')
+
+                        if new_device_id == device_id:
+                            self.update_canvas_with_image_id(new_image_id)
+
+                    elif change['operationType'] == 'update':
+                        # For 'update' operations, fetch the document using its '_id'
+                        updated_doc_id = change['documentKey']['_id']
+                        updated_doc = photos_collection.find_one({"_id": updated_doc_id})
+                        
+                        if updated_doc and updated_doc.get('device_id') == device_id:
+                            new_image_id = updated_doc.get('image_id')
+                            self.update_canvas_with_image_id(new_image_id)
+
+                    time.sleep(10)
+
+                except Exception as e:
+                    print(f"Error in monitoring photos collection: {e}")
+
+                
+    def update_canvas_with_image_id(self, image_id_str):
+        try:
+            # Connect to the Database and GridFS
+            db = mongo_client.get_database("moodCraftAI")
+            fs = gridfs.GridFS(db)
+
+            # Convert the image_id string to ObjectId
+            image_id = ObjectId(image_id_str)
+
+            # Fetch the image using its ObjectId
+            image_data = fs.get(image_id).read()
+
+            # Convert the image data to a format that Tkinter can use
+            image = Image.open(BytesIO(image_data))
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
+
+            # Resize the image using LANCZOS (formerly ANTIALIAS)
+            photo = ImageTk.PhotoImage(image.resize((canvas_width, canvas_height), Image.Resampling.LANCZOS))
+
+            # Display the image on the canvas
+            self.canvas.image = photo  # Keep a reference to avoid garbage collection
+            self.canvas.create_image(0, 0, anchor="nw", image=photo)
+
+        except Exception as e:
+            print(f"Error updating canvas with new image: {e}")
+
 
     def monitor_db_for_changes(self):
         global document_id_to_update, device_id  # Ensure device_id is accessible globally
@@ -272,6 +334,7 @@ class ImageGeneratorUI(customtkinter.CTk):
 
                     time.sleep(10)
 
+    
     def update_prompt_and_generate_image(self, new_prompt, new_art_style):
         # Update the prompt in the Tkinter Entry widget
         self.entry.delete(0, 'end')
@@ -576,6 +639,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         new_device_id = f"#{random_chars}"
 
         device_id = new_device_id
+        print(device_id)
         # Update the label
         self.number_label.configure(text="Device Id: " + new_device_id)
 

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompts Gallery</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: auto;
+        }
+        .sticky-button {
+            position: sticky;
+            top: 20px;
+            z-index: 1;
+        }
+        .search-bar {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .search-input {
+            flex-grow: 1;
+            margin-right: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            outline: none;
+        }
+        .search-button {
+            white-space: nowrap;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .search-button:hover {
+            background-color: #0056b3;
+        }
+        .loading {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .card {
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .card-img-top {
+            height: 250px;
+            object-fit: cover;
+        }
+        .card-title {
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+        @media (max-width: 576px) {
+            .search-input, .search-button {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .image-caption {
+            position: absolute;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            width: 100%;
+            text-align: center;
+            padding: 5px;
+            display: none;
+        }
+        .card:hover .image-caption {
+            display: block;
+        }
+        /* Additional CSS for the modal */
+        .modal-image {
+            max-width: 100%;
+            max-height: 80vh;
+            margin: 0 auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-center my-4">Prompts Gallery</h2>
+
+        <!-- Sticky Back Button -->
+        <a href="/" class="btn btn-secondary sticky-button" id="backButton">Back</a>
+
+        <div class="search-bar">
+            <form action="/prompts" method="get" class="form-inline">
+                <input type="text" name="device_id" class="form-control search-input" placeholder="Enter Device ID" value="{{ device_id_query }}">
+                <button type="submit" class="btn btn-primary search-button">Search</button>
+            </form>
+        </div>
+
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+
+        <div class="row" id="gallery">
+            {% for novel in novels %}
+            <div class="col-md-4">
+                <div class="card mb-4 shadow-sm">
+                    <div class="zoom-image">
+                        <img src="/image/{{ novel.image_id }}" class="card-img-top" alt="Image">
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ novel.prompt }}</p>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="btn-group">
+                                <a href="/image/{{ novel.image_id }}" class="btn btn-sm btn-outline-secondary btn-download" download="Image_{{ novel.image_id }}">Download</a>
+                                <button class="btn btn-sm btn-info btn-preview" data-toggle="modal" data-target="#previewModal" data-image-id="{{ novel.image_id }}">Preview</button>
+                            </div>
+                        </div>
+                        <!-- New Form for Updating Canvas, placed under the buttons -->
+                        <div class="row">
+                            <div class="col-12">
+                                <form action="/update_canvas" method="post" class="form-inline">
+                                    <input type="hidden" name="imageId" value="{{ novel.image_id }}">
+                                    <div class="input-group mb-2 mr-sm-2">
+                                        <input type="text" class="form-control form-control-sm" name="deviceId" placeholder="Enter Device ID" required>
+                                        <div class="input-group-append">
+                                            <button type="submit" class="btn btn-sm btn-primary">Set as Background</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Modal for Image Preview -->
+    <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <img class="modal-image img-fluid" src="" alt="Preview">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript to handle the sticky back button, image preview, and loading indicator -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            updatePreviewButtons();
+            document.querySelector(".loading").style.display = "none";
+        });
+
+        function updatePreviewButtons() {
+            var previewButtons = document.querySelectorAll(".btn-preview");
+            var modalImage = document.querySelector(".modal-image");
+
+            previewButtons.forEach(function(button) {
+                button.addEventListener("click", function() {
+                    var imageId = button.getAttribute("data-image-id");
+                    modalImage.setAttribute("src", "/image/" + imageId);
+                });
+            });
+        };
+        // Enhanced Image Loading
+        window.onload = function() {
+            document.getElementById("loadingOverlay").style.display = "none";
+        };
+    </script>
+</body>
+</html>
