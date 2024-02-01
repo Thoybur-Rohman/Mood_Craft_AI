@@ -59,6 +59,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         photos_thread.daemon = True
         db_thread.start()
         photos_thread.start()
+        self.is_generating_image = False
 
         # Change to the actual URL when deployed
         web_app_url = "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io/"
@@ -278,6 +279,7 @@ class ImageGeneratorUI(customtkinter.CTk):
 
                 
     def update_canvas_with_image_id(self, image_id_str):
+        global Canvas_image
         try:
             # Connect to the Database and GridFS
             db = mongo_client.get_database("moodCraftAI")
@@ -296,7 +298,7 @@ class ImageGeneratorUI(customtkinter.CTk):
 
             # Resize the image using LANCZOS (formerly ANTIALIAS)
             photo = ImageTk.PhotoImage(image.resize((canvas_width, canvas_height), Image.Resampling.LANCZOS))
-
+            Canvas_image = photo
             # Display the image on the canvas
             self.canvas.image = photo  # Keep a reference to avoid garbage collection
             self.canvas.create_image(0, 0, anchor="nw", image=photo)
@@ -349,36 +351,37 @@ class ImageGeneratorUI(customtkinter.CTk):
 # ------------------------------------------------------------------------PTOGRESSBAR--------------------------------------------------------------------------
 
     def startgen(self, emotion=None):
+        if self.is_generating_image:
+            return  # Exit the function if an image is already being generated
+
+        self.is_generating_image = True  # Set the flag to True to indicate the process has started
+
         self.progressbar = customtkinter.CTkProgressBar(
             self, orientation="horizontal", indeterminate_speed=3, mode="indeterminate", width=950)
         self.progressbar.grid(row=2, column=1, padx=5, pady=5)
         self.progressbar.start()
 
-        # Start image generation in a separate thread, checking if emotion is not None
-        if emotion is not None:
-            thread = threading.Thread(
-                target=self.threaded_image_generation, args=(emotion,))
-        else:
-            thread = threading.Thread(target=self.threaded_image_generation)
-
+        # Start image generation in a separate thread
+        thread = threading.Thread(target=self.threaded_image_generation, args=(emotion,))
         thread.start()
 
+
     def threaded_image_generation(self, emotion=None):
-        # Check if emotion is None and call generate_image_from_emotion accordingly
-        if emotion is not None:
-            self.generate_image_from_emotion(emotion)
-        else:
-            self.generate_image_from_emotion()
-
-        # Schedule the stop_progressbar method to run on the main thread
-        self.app.ui.after(0, self.stop_progressbar)
-
-    # Schedule the stop_progressbar method to run on the main thread
-        self.app.ui.after(0, self.stop_progressbar)
+        try:
+            # Image generation logic
+            if emotion is not None:
+                self.generate_image_from_emotion(emotion)
+            else:
+                self.generate_image_from_emotion()
+        finally:
+            # Schedule the stop_progressbar method to run on the main thread
+            self.app.ui.after(0, self.stop_progressbar)
 
     def stop_progressbar(self):
         self.progressbar.stop()
         self.progressbar.grid_forget()
+        self.is_generating_image = False  # Reset the flag when the process is completed
+
 
  # -------------------------------------------------------------------------Toggll SideBar----------------------------------------------------------------------------------
 
@@ -571,8 +574,7 @@ class ImageGeneratorUI(customtkinter.CTk):
                     image.save(png_io, format="PNG")
                     png_bytes = png_io.getvalue()
             except IOError:
-                raise Exception(
-                    "Unable to convert image to PNG - may be invalid image data")
+                raise Exception("Unable to convert image to PNG - may be invalid image data")
 
             # Connect to MongoDB
             connection = MongoClient(
@@ -583,36 +585,36 @@ class ImageGeneratorUI(customtkinter.CTk):
             fs = gridfs.GridFS(database)
 
             # Store the PNG image in GridFS
-            image_id = fs.put(png_bytes, filename=filename,
-                              collection='generated_images')
+            image_id = fs.put(png_bytes, filename=filename, collection='generated_images')
 
-            # Update the movie_info with the image reference
-            m = str(image_id)
-            random_id_np = self.generate_random_id_np(10)
-
-            # Create and insert the movie document
-            generted_art = {
-                "imdbId": random_id_np,
-                "mood": [],
-                "art": str(image_id),
-                "reviews": []
-            }
-            movies_collection = database['Movies']
-            movies_collection.insert_one(generted_art)
-
+            settings_collection = database['settings']
             if document_id_to_update is not None:
-                settings_collection = database['settings']
+                # Update existing document
                 settings_collection.update_one(
-                {"_id": ObjectId(document_id_to_update)},
-                {"$set":
-                {"art": image_id,
-                "device_id": device_id}})
-                document_id_to_update = None
-            print(
-                f"Image '{filename}' and associated data saved to MongoDB successfully.")
+                    {"_id": ObjectId(document_id_to_update)},
+                    {"$set": {"art": image_id, "device_id": device_id}})
+            else:
+                # Upsert: Update if exists, insert if not
+                new_id = ObjectId()  # Generating a new ObjectId
+                update = {
+                    "$setOnInsert": {
+                        "_id": new_id,
+                        "dalle_key": "",  # Set default values
+                        "prompt": filename,
+                        "style": "Generted from Moodcraft",
+                        "art": image_id
+                    },
+                    "$set": {
+                        "device_id": device_id
+                    }
+                }
+                settings_collection.update_one({"device_id": device_id}, update, upsert=True)
+
+            print(f"Image '{filename}' and associated data saved to MongoDB successfully.")
 
         except Exception as e:
             print(f"Error saving image to MongoDB: {str(e)}")
+
 
     def generate_random_id_np(self, length=10):
         """
