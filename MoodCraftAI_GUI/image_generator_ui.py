@@ -61,25 +61,9 @@ class ImageGeneratorUI(customtkinter.CTk):
         photos_thread.start()
         self.is_generating_image = False
 
-        # Change to the actual URL when deployed
-        web_app_url = "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io/"
-
-        # Generate QR Code
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=4,
-            border=2,
-        )
-
-        qr.add_data(web_app_url)  # Replace with your data
-        qr.make(fit=True)
-
-        qr_img = qr.make_image(fill_color="Black", back_color="White")
-        qr_photo = ImageTk.PhotoImage(qr_img)
+    
 
         # Resize the QR Code Image
-        desired_size = (10, 10)  # Example size, adjust as needed
 
         # Add a boolean attribute to track the sidebar state
         self.is_sidebar_visible = True
@@ -141,11 +125,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         # Place the button in a fixed location
         self.toggle_sidebar_button.grid(row=1, column=0)
 
-        self.qr_label = customtkinter.CTkLabel(
-            self.tabview.tab("MoodCraft AI"), image=qr_photo)
-        self.qr_label.image = qr_photo  # Keep a reference to avoid garbage collection
-        # Adjust row and column as needed
-        self.qr_label.grid(row=1, column=0, padx=0, pady=0)
+        
 
         # Create a label for the 4-digit number
         self.number_label = customtkinter.CTkLabel(self.tabview.tab("MoodCraft AI"),
@@ -154,6 +134,35 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.number_label.grid(row=3, column=0, padx=5, pady=5)
 
         self.update_number()
+
+         # Change to the actual URL when deployed
+        web_app_url = "http://127.0.0.1:5000"
+
+        # Generate QR Code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=4,
+            border=2,
+        )
+        # When you generate the device_id, ensure it is URL-encoded if it includes '#'
+        device_id_encoded = device_id.replace("#", "%23")
+        web_app_url_with_device_id = f"{web_app_url}?device_id={device_id_encoded}"
+
+
+        qr.add_data(web_app_url_with_device_id)
+        print(web_app_url_with_device_id)
+        qr.make(fit=True)
+
+        qr_img = qr.make_image(fill_color="Black", back_color="White")
+        qr_photo = ImageTk.PhotoImage(qr_img)
+
+
+        self.qr_label = customtkinter.CTkLabel(
+            self.tabview.tab("MoodCraft AI"), image=qr_photo)
+        self.qr_label.image = qr_photo  # Keep a reference to avoid garbage collection
+        # Adjust row and column as needed
+        self.qr_label.grid(row=1, column=0, padx=0, pady=0)
 
         # ----------------------------------------------------------------------------------------------------------------------------- TAB 2
 
@@ -314,10 +323,12 @@ class ImageGeneratorUI(customtkinter.CTk):
                 if change['operationType'] == 'insert':
                     new_doc_id = change['documentKey']['_id']
 
-                    # Safely access 'device_id', 'prompt', and 'style' keys
+                    # Safely access 'device_id', 'prompt', 'style', 'dalle_key', and 'mood' keys
                     new_device_id = change['fullDocument'].get('device_id')
                     new_prompt = change['fullDocument'].get('prompt')
                     new_art_style = change['fullDocument'].get('style')
+                    new_dalle_id = change['fullDocument'].get('dalle_key', '')  # Optional, default to empty string
+                    new_mood = change['fullDocument'].get('mood', '')  # Optional, default to empty string
 
                     # Check if the device_id from the document matches the current device_id
                     if new_device_id == device_id:
@@ -328,7 +339,8 @@ class ImageGeneratorUI(customtkinter.CTk):
                             # Ensure both new_prompt and new_art_style are not None before proceeding
                             if new_prompt is not None and new_art_style is not None:
                                 document_id_to_update = new_doc_id
-                                self.update_prompt_and_generate_image(new_prompt, new_art_style)
+                                # Now also pass new_dalle_id and new_mood to the method that generates the image
+                                self.update_prompt_and_generate_image(new_prompt, new_art_style, new_mood)
                             else:
                                 print("Document missing required fields: 'prompt' or 'style'")
                     else:
@@ -420,6 +432,7 @@ class ImageGeneratorUI(customtkinter.CTk):
 
             if emotion is None:
                 user_prompt = self.entry.get()
+                user_prompt = self.get_antonym(user_prompt)
             else:
                 user_prompt = emotion
                 if self.antonym_mode:

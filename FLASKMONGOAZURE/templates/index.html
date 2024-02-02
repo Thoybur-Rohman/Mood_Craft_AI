@@ -113,8 +113,8 @@
         .toggle-switch {
             position: relative;
             display: inline-block;
-            width: 60px;
-            height: 34px;
+            width: 40px; /* Smaller width */
+            height: 20px; /* Fixed height */
         }
         .toggle-switch input { 
             opacity: 0;
@@ -135,10 +135,10 @@
         .slider:before {
             position: absolute;
             content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
+            height: 16px; /* Fixed height */
+            width: 16px; /* Fixed width */
+            left: 2px; /* Adjusted position */
+            bottom: 2px; /* Adjusted position */
             background-color: white;
             -webkit-transition: .4s;
             transition: .4s;
@@ -150,9 +150,9 @@
             box-shadow: 0 0 1px #2196F3;
         }
         input:checked + .slider:before {
-            -webkit-transform: translateX(26px);
-            -ms-transform: translateX(26px);
-            transform: translateX(26px);
+            -webkit-transform: translateX(20px); /* Adjusted position */
+            -ms-transform: translateX(20px); /* Adjusted position */
+            transform: translateX(20px); /* Adjusted position */
         }
         .slider.round {
             border-radius: 34px;
@@ -170,6 +170,26 @@
         }
         .btn-custom {
             margin-top: 10px;
+        }
+        .enhanced-warning {
+            color: #721c24; /* Darker red for text */
+            background-color: #f8d7da; /* Light red background for visibility */
+            border: 2px solid #f5c6cb; /* Slightly darker border for emphasis */
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px; /* Larger font size for emphasis */
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px; /* Adds space between icon and text */
+        }
+
+        /* Optional: If you want to ensure the icon aligns nicely with the text */
+        .enhanced-warning i {
+            margin-top: 3px; /* Adjust as needed for alignment */
         }
     </style>
 </head>
@@ -191,12 +211,19 @@
 
     <div class="container-main">
         <div class="form-container">
-            <h2 class="text-center">Welcome to MoodCraftAI</h2>
+            <h2 class="text-center">Welcome to MoodCraft AI</h2>
             <form id="moodcraftForm" action="/prompts" method="POST">
                 <!-- Device ID field -->
-                <div class="form-group">
+                <div class="form-group" id="deviceIdContainer">
+                    {% if device_id %}
                     <label for="deviceId">Device ID:</label>
-                    <input type="text" class="form-control" id="deviceId" name="deviceId" required placeholder="Enter Device ID">
+                    <input type="text" class="form-control" id="deviceId" name="deviceId" value="{{ device_id }}" readonly>
+                    {% else %}
+                    <div class="enhanced-warning">
+                        <i class="fas fa-exclamation-triangle"></i> <!-- Font Awesome icon -->
+                        Please scan your Mood Craft AI QR code from the device.
+                    </div>
+                    {% endif %}
                 </div>
                 <!-- Prompt field -->
                 <div class="form-group">
@@ -215,6 +242,27 @@
                 <div class="form-group" id="dalleIdContainer" style="display: none;">
                     <label for="dalleKey">DALL-E ID (optional):</label>
                     <input type="text" class="form-control" id="dalleKey" name="dalleKey" placeholder="Enter DALL-E ID">
+                </div>
+                <!-- Toggle for Mood -->
+                <div class="form-group">
+                    <label class="d-block">Include Mood:</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggleMood">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <!-- Mood Select Dropdown (initially hidden) -->
+                <div class="form-group" id="moodContainer" style="display: none;">
+                    <label for="mood">Mood:</label>
+                    <select class="form-control" id="mood" name="mood" required>
+                        <option value="Angry">Angry</option>
+                        <option value="Disgust">Disgust</option>
+                        <option value="Fear">Fear</option>
+                        <option value="Happy">Happy</option>
+                        <option value="Neutral">Neutral</option>
+                        <option value="Sad">Sad</option>
+                        <option value="Surprise">Surprise</option>
+                    </select>
                 </div>
                 <!-- Style Select Dropdown -->
                 <div class="form-group">
@@ -284,6 +332,15 @@
                 dalleIdContainer.style.display = 'block';
             } else {
                 dalleIdContainer.style.display = 'none';
+            }
+        });
+
+        document.getElementById('toggleMood').addEventListener('change', function() {
+            var moodContainer = document.getElementById('moodContainer');
+            if (this.checked) {
+                moodContainer.style.display = 'block';
+            } else {
+                moodContainer.style.display = 'none';
             }
         });
 
