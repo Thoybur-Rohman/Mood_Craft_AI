@@ -103,10 +103,6 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.antonym_mode = False  # To track the state of the toggle
 
         # create main entry and button ------------------------------------------------------------------------------------------------ TAB 1
-        self.label_tab_2 = customtkinter.CTkLabel(self.tabview.tab(
-            "MoodCraft AI"), text="select you generation type")
-        self.label_tab_2.grid(row=0, column=0, padx=5, pady=0)
-
         self.sidebar_button_1 = customtkinter.CTkButton(
             self.tabview.tab("MoodCraft AI"), command=self.sidebar_button_event)
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
@@ -143,7 +139,7 @@ class ImageGeneratorUI(customtkinter.CTk):
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
             box_size=4,
-            border=2,
+            border=1,
         )
         # When you generate the device_id, ensure it is URL-encoded if it includes '#'
         device_id_encoded = device_id.replace("#", "%23")
@@ -162,7 +158,7 @@ class ImageGeneratorUI(customtkinter.CTk):
             self.tabview.tab("MoodCraft AI"), image=qr_photo)
         self.qr_label.image = qr_photo  # Keep a reference to avoid garbage collection
         # Adjust row and column as needed
-        self.qr_label.grid(row=1, column=0, padx=0, pady=0)
+        self.qr_label.grid(row=4, column=0, padx=0, pady=0)
 
         # ----------------------------------------------------------------------------------------------------------------------------- TAB 2
 
@@ -176,8 +172,10 @@ class ImageGeneratorUI(customtkinter.CTk):
             20, 20), pady=(5, 5), sticky="nsew")
 
         self.optionmenu_artStyle = customtkinter.CTkOptionMenu(self.tabview.tab("Generate"), dynamic_resizing=False,
-                                                               values=["Realistic", "Cartoon", "3D Illustration", "Flat Art"])
+                                                       values=["Abstract", "Realistic", "Cartoon", "3D Illustration", "Flat Art", "Watercolor", "Oil Painting", "Sketch", "Pixel Art", "Surrealism", "Pop Art", "Minimalist"])
         self.optionmenu_artStyle.grid(row=2, column=0, padx=20, pady=(20, 10))
+        self.optionmenu_artStyle.set("Abstract")  # Set "Abstract" as the default selection
+
 
         self.string_input_button = customtkinter.CTkButton(self.tabview.tab("Generate"), text="Set Dalle-E API Key",
                                                            command=self.open_input_dialog_event)
@@ -199,8 +197,6 @@ class ImageGeneratorUI(customtkinter.CTk):
 # set default values ---------------------------------------------------------------------------------------------------------------------
         self.sidebar_button_1.configure(
             text="Toogle Camera")
-      #  self.appearance_mode_optionemenu.set("Dark")
-      #  self.scaling_optionemenu.set("100%")
 # ------------------------------------------------------------------------- METHODS -------------------------------------------------------------------------
         db_thread = threading.Thread(target=self.monitor_db_for_changes)
         db_thread.daemon = True
@@ -286,36 +282,6 @@ class ImageGeneratorUI(customtkinter.CTk):
                 except Exception as e:
                     print(f"Error in monitoring photos collection: {e}")
 
-                
-    def update_canvas_with_image_id(self, image_id_str):
-        global Canvas_image
-        try:
-            # Connect to the Database and GridFS
-            db = mongo_client.get_database("moodCraftAI")
-            fs = gridfs.GridFS(db)
-
-            # Convert the image_id string to ObjectId
-            image_id = ObjectId(image_id_str)
-
-            # Fetch the image using its ObjectId
-            image_data = fs.get(image_id).read()
-
-            # Convert the image data to a format that Tkinter can use
-            image = Image.open(BytesIO(image_data))
-            canvas_width = self.canvas.winfo_width()
-            canvas_height = self.canvas.winfo_height()
-
-            # Resize the image using LANCZOS (formerly ANTIALIAS)
-            photo = ImageTk.PhotoImage(image.resize((canvas_width, canvas_height), Image.Resampling.LANCZOS))
-            Canvas_image = photo
-            # Display the image on the canvas
-            self.canvas.image = photo  # Keep a reference to avoid garbage collection
-            self.canvas.create_image(0, 0, anchor="nw", image=photo)
-
-        except Exception as e:
-            print(f"Error updating canvas with new image: {e}")
-
-
     def monitor_db_for_changes(self):
         global document_id_to_update, device_id  # Ensure device_id is accessible globally
         with collection.watch() as stream:
@@ -328,7 +294,7 @@ class ImageGeneratorUI(customtkinter.CTk):
                     new_prompt = change['fullDocument'].get('prompt')
                     new_art_style = change['fullDocument'].get('style')
                     new_dalle_id = change['fullDocument'].get('dalle_key', '')  # Optional, default to empty string
-                    new_mood = change['fullDocument'].get('mood', '')  # Optional, default to empty string
+                    new_mood = change['fullDocument'].get('mood', '')  # Optional, handle as empty string if not present
 
                     # Check if the device_id from the document matches the current device_id
                     if new_device_id == device_id:
@@ -336,19 +302,54 @@ class ImageGeneratorUI(customtkinter.CTk):
                         if new_doc_id != self.last_processed_doc_id:
                             self.last_processed_doc_id = new_doc_id
 
-                            # Ensure both new_prompt and new_art_style are not None before proceeding
-                            if new_prompt is not None and new_art_style is not None:
+                            # Ensure new_prompt is not None and new_art_style is not an empty string before proceeding
+                            if new_prompt and new_art_style:
                                 document_id_to_update = new_doc_id
-                                # Now also pass new_dalle_id and new_mood to the method that generates the image
-                                self.update_prompt_and_generate_image(new_prompt, new_art_style, new_mood)
+                                # Check if new_mood is not an empty string or None explicitly (though get() method defaults to '' if not found)
+                                if new_mood:
+                                    image_prompt = f"Generate me an image with the prompt \"{new_prompt}\", depicting the style \"{new_art_style}\" and showing the emotion \"{new_mood}\" in abstract."
+                                else:
+                                    # Corrected the f-string syntax for the case without new_mood
+                                    image_prompt = f"Generate me an image with the prompt \"{new_prompt}\""
+
+                                # Call the method to process the image generation with the formulated prompt
+                                self.update_prompt_and_generate_image(image_prompt, new_art_style)
                             else:
-                                print("Document missing required fields: 'prompt' or 'style'")
+                                print("Document missing required fields: 'prompt' is empty or 'style' is empty")
                     else:
                         print("Device ID does not match")
 
                     time.sleep(10)
 
-    
+
+    def update_canvas_with_image_id(self, image_id_str):
+        global Canvas_image
+        try:
+            # Connect to the Database and GridFS
+            db = mongo_client.get_database("moodCraftAI")
+            fs = gridfs.GridFS(db)
+            
+            # Convert the image_id string to ObjectId
+            image_id = ObjectId(image_id_str)
+            Canvas_image = image_id
+            # Fetch the image using its ObjectId
+            image_data = fs.get(image_id).read()
+
+            # Convert the image data to a format that Tkinter can use
+            image = Image.open(BytesIO(image_data))
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
+
+            # Resize the image using LANCZOS (formerly ANTIALIAS)
+            photo = ImageTk.PhotoImage(image.resize((canvas_width, canvas_height), Image.Resampling.LANCZOS))
+            
+            # Display the image on the canvas
+            self.canvas.image = photo  # Keep a reference to avoid garbage collection
+            self.canvas.create_image(0, 0, anchor="nw", image=photo)
+
+        except Exception as e:
+            print(f"Error updating canvas with new image: {e}")
+
     def update_prompt_and_generate_image(self, new_prompt, new_art_style):
         # Update the prompt in the Tkinter Entry widget
         self.entry.delete(0, 'end')
@@ -534,10 +535,15 @@ class ImageGeneratorUI(customtkinter.CTk):
 
         # Allow the UI to update its layout
         self.update_idletasks()
+        if isinstance(Canvas_image, str) and Canvas_image.startswith('http'):
+            # Start a background thread for downloading and processing the image
+            thread = threading.Thread(target=self.process_image, args=(Canvas_image,), daemon=True)
+            thread.start()
+        else:
+        # Assume it's an image ID for GridFS, update the canvas directly
+            print(Canvas_image)
+            self.update_canvas_with_image_id(Canvas_image)
 
-        # Start a background thread for downloading and processing the image
-        thread = threading.Thread(target=self.process_image, args=(Canvas_image,), daemon=True)
-        thread.start()
 
     def process_image(self, url):
         try:
@@ -656,7 +662,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         device_id = new_device_id
         print(device_id)
         # Update the label
-        self.number_label.configure(text="Device Id: " + new_device_id)
+        self.number_label.configure(text="Id: " + new_device_id)
 
         # Schedule the next update after 2 days (2 days * 24 hours * 60 minutes * 60 seconds)
         threading.Timer(172800, self.update_number).start()
