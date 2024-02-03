@@ -132,7 +132,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.update_number()
 
          # Change to the actual URL when deployed
-        web_app_url = "http://127.0.0.1:5000"
+        web_app_url = "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io"
 
         # Generate QR Code
         qr = qrcode.QRCode(
