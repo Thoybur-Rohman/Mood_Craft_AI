@@ -25,9 +25,6 @@ import numpy as np
 import random
 import nltk
 from nltk.corpus import wordnet
-import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel
-from PyQt5.QtCore import Qt
 from PIL import Image, ImageTk
 
 
@@ -60,6 +57,7 @@ class ImageGeneratorUI(customtkinter.CTk):
         db_thread.start()
         photos_thread.start()
         self.is_generating_image = False
+        self.background_image = Image.open('Moodcraft.jpg')
 
     
 
@@ -76,10 +74,15 @@ class ImageGeneratorUI(customtkinter.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        # create canvas
-        self.canvas = customtkinter.CTkCanvas(self, width=512, height=512)
-        self.canvas.grid(row=0, column=1, rowspan=3,
-                         sticky="nsew")  # Set rowspan to 3
+        self.background_photo = ImageTk.PhotoImage(self.background_image)
+
+        # Create canvas with the background image
+        self.canvas = customtkinter.CTkCanvas(self)
+        self.canvas_background = self.canvas.create_image(0, 0, image=self.background_photo, anchor="nw")
+        self.canvas.grid(row=0, column=1, rowspan=3, sticky="nsew")
+
+        # Bind the configure event of the canvas to the resize_background function
+        self.canvas.bind("<Configure>", self.resize_background)
 
         # create tabview
         self.tabview = customtkinter.CTkTabview(self, width=80)
@@ -201,6 +204,14 @@ class ImageGeneratorUI(customtkinter.CTk):
         db_thread = threading.Thread(target=self.monitor_db_for_changes)
         db_thread.daemon = True
         db_thread.start()
+    
+    def resize_background(self, event):
+        # Resize the background image to the new size of the canvas
+        new_width = event.width
+        new_height = event.height
+        self.background_image = self.background_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        self.background_photo = ImageTk.PhotoImage(self.background_image)
+        self.canvas.itemconfig(self.canvas_background, image=self.background_photo)
 
     def toggle_camera(self):
         if self.camera_active:
