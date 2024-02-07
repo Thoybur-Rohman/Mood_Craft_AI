@@ -26,6 +26,10 @@ app: Flask = Flask(__name__)
 app.secret_key = 'MoodCraft AI'  # Change this to a random secret key
 app.permanent_session_lifetime = timedelta(minutes=4)  # Sets the session lifetime
 
+@app.route('/landing')
+def landing():
+    return render_template('landing.html')
+
 @app.route('/')
 def index():
     device_id = request.args.get('device_id', None)

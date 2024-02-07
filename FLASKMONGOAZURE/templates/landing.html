@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Landing Page</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 48vh;
+            overflow: hidden;
+        }
+        .video-container::before { /* Added */
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.2); /* Dark filter color */
+            z-index: 0;
+        }
+
+        video.bgVideo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+
+        .content-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            width: 50%;
+            background-color: rgba(0, 0, 0, 0);
+            /* Removed background color */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            padding: 1rem;
+            transition: background-color 0.5s ease;
+        }
+
+        .content {
+            text-align: center;
+        }
+
+        .hero-boxes {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .box {
+            flex: 1;
+            min-width: 250px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .box:hover {
+            transform: translateY(-5px);
+        }
+
+        .section {
+            text-align: center;
+            margin-top: 50px;
+            /* Increased margin-top */
+            margin-bottom: 50px;
+            /* Increased margin-bottom */
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: white;
+            /* Added text color */
+            padding: 4rem 0;
+            /* Adjusted padding */
+        } 
+ 
+
+        .section.about {
+            background-color:#33495e; /* Changed background color to black */
+            color: white; /* Set text color to white */
+            padding: 2rem; /* Adjusted padding */
+            border-radius: 0; /* Remove border radius */
+        }
+
+        .section.about h2{
+             color: white;
+             font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .section.about p {
+            /* Set text color to white for paragraphs within the About Us section */
+            margin-bottom: 0.5rem;
+            font-size: 1.4rem;
+            line-height: 1.6;
+            color: white;
+        }
+
+        h2 {
+            
+            color: #333;
+        }
+
+        p {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 0.5rem;
+        }
+
+        .team-members {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            /* Increased gap between team members */
+            margin-top: 30px;
+            color: black; /* Set text color to black */
+        }
+
+        .team-member {
+            max-width: 300px;
+            text-align: center;
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+            /* Added space between picture and heading */
+        }
+
+        .team-member img {
+            width: 100%;
+            border-radius: 8px;
+            /* Keep it as a square */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-member img:hover {
+            transform: scale(1.05);
+        }
+
+        footer {
+            background-color: #343a40;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        .navbar-toggler-icon {
+            display: inline-block;
+            width: 1.5em;
+            height: 1.5em;
+            vertical-align: middle;
+            content: "";
+            background: no-repeat center center;
+            background-size: 100% 100%;
+        }
+
+        @media (max-width: 768px) {
+            .video-container {
+                height: 22vh;
+            }
+
+            .content-container {
+                top: unset;
+                right: unset;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                align-items: center;
+                background-color: rgba(0, 0, 0, 0);
+                padding: 0.8rem;
+            }
+
+            .content-container .content p {
+                color: white;
+            }
+
+            .team-members {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+                /* Increased gap between team members */
+            }
+
+            .team-member {
+                width: 80%;
+                margin-bottom: 20px;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .subtitle {
+                display: none;
+            }
+
+            .content-container {
+                right: 10%;
+                padding: 2rem;
+            }
+
+            .content-container .content p {
+                color: #333;
+                /* Darker text color */
+                font-size: 2rem;
+            }
+
+            .team-members {
+                display: flex;
+                justify-content: center;
+            }
+
+            .team-member {
+                margin: 0 10px;
+                width: 300px;
+            }
+        }
+
+        .footer {
+            background-color: #33495e;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .btn-custom {
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-custom:hover {
+            background-color: #4cae4c;
+        }
+
+        .footer-icons {
+            margin-top: 10px;
+        }
+
+        .footer-icons i {
+            color: white;
+            margin-right: 10px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-icons i:hover {
+            color: #f0ad4e;
+        }
+
+        /* Navbar styling */
+        .navbar-custom {
+            background-color: #33495e;
+            border-bottom: 3px solid #f0ad4e;
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .navbar-custom .navbar-brand,
+        .navbar-custom .navbar-nav .nav-link {
+            color: #fff;
+            transition: color 0.3s ease;
+            font-size: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .navbar-custom .navbar-brand:hover,
+        .navbar-custom .navbar-nav .nav-link:hover {
+            color: #f0ad4e;
+        }
+
+        .navbar-toggler {
+            border: none;
+            color: #fff;
+        }
+
+        .navbar-toggler:focus {
+            outline: none;
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255, 255, 255, 0.5)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="/landing">MoodCraftAI</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item"><a class="nav-link" href="/prompts">Prompts</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/">Dashboard
+                        </a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+    <div class="video-container">
+        <video class="bgVideo" autoplay muted loop id="bgVideo">
+            <source src="static/Moodcraft.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="content-container">
+            <div class="content">
+                <p class="text-lg" style="color: white;">Welcome to MoodCraft AI</p>
+                <!-- Changed text color to white -->
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="hero-boxes">
+            <div class="box">
+                <h3 class="text-xl font-semibold">Innovation</h3>
+                <p class="text-lg">Driving forward with cutting-edge solutions.</p>
+            </div>
+            <div class="box">
+                <h3 class="text-xl font-semibold">Excellence</h3>
+                <p class="text-lg">Committed to quality and excellence in all we do.</p>
+            </div>
+            <div class="box">
+                <h3 class="text-xl font-semibold">Integrity</h3>
+                <p class="text-lg">Building trust with transparency and integrity.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section about">
+        <div class="container">
+            <h2 class="text-3xl font-bold mb-5">About Us</h2>
+            <div class="row justify-content-center align-items-center">
+                <div class="col-md-6">
+                    <img src="static\about_us.png" alt="About Us Photo" class="img-fluid" style="max-width: 100%; height: auto;">
+                </div>
+                <div class="col-md-6 text-left">
+                    <p class="text-lg mb-4">
+                        MoodCraft AI specializes in AI emotion detection to bright the gap between AI and Art and offers innovative solution, including our Modern smart Art Frame. With a focus on simplicity and versatility, our solutions add creativity to any environment.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    
+    <div class="section">
+        <div class="container">
+            <h2 class="text-3xl font-bold">Our Team</h2>
+            <div class="team-members">
+                <div class="team-member">
+                    <img src="static\Thoy.png" alt="Project Developer" style="width: 100%; height: auto;">
+                    <h3 class="text-xl font-semibold mt-3">Project Developer</h3>
+                    <p class="text-lg">Thoybur Rohman</p> 
+                </div>
+                <div class="team-member">
+                    <img src="static\mahir.png" alt="Project Supervisor" style="width: 100%; height: auto;">
+                    <h3 class="text-xl font-semibold mt-3">Project Supervisor</h3>
+                    <p class="text-lg">Mahir Arzokey</p> 
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <footer class="footer">
+        <div class="container">
+            <span>MoodCraftAI &copy; 2024</span>
+            <div class="footer-icons">
+                <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery first, then Popper.js, then Bootstrap JS (all for Bootstrap 4.3.1) -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function ()
+        {
+            var video = document.getElementById('bgVideo');
+            video.playbackRate = 0.65; // Slow down the video to half the normal speed.
+        });
+    </script>
+</body>
+
+</html>

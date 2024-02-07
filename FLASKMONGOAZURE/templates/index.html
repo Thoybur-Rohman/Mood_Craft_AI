@@ -59,6 +59,19 @@
             background-color: #4cae4c;
         }
         @media (max-width: 768px) {
+            @media (max-width: 768px) {
+                .navbar-custom {
+                    padding-top: 0.5rem;
+                    padding-bottom: 0.5rem;
+                }
+                .navbar-custom .navbar-brand,
+                .navbar-custom .navbar-nav .nav-link {
+                    font-size: 1rem;
+                }
+                .navbar-toggler-icon {
+                    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255, 255, 255, 0.5)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+                }
+            }
             .form-container {
                 padding: 15px;
             }
@@ -199,15 +212,17 @@
             <a class="navbar-brand" href="/">MoodCraftAI Dashboard</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <i class="fas fa-bars"></i>
+                <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ml-auto">
+                    <li class="nav-item"><a class="nav-link" href="/landing">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="/prompts">Prompts</a></li>
                 </ul>
             </div>
         </div>
     </nav>
+    
 
     <div class="container-main">
         <div class="form-container">
