@@ -9,7 +9,28 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 import gridfs
 from datetime import timedelta ,timedelta ,datetime
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from tensorflow.keras.models import load_model
+import numpy as np
+import pickle
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+import random
+import nltk
+from fastapi.responses import JSONResponse
+from typing import Optional
+from fastapi.responses import HTMLResponse
+import json
+from pydantic import BaseModel
 
+
+lemmatizer = WordNetLemmatizer()
+
+model = load_model(r'C:\Users\Anti coding club\Downloads\moodcraft_ai_0.1.0.h5')
+words = pickle.load(open(r'C:\Users\Anti coding club\Downloads\words.pkl', 'rb'))
+classes = pickle.load(open(r'C:\Users\Anti coding club\Downloads\classes.pkl', 'rb'))
+intents = json.load(open('intents.json', 'r'))
 
 
 # access your MongoDB Atlas cluster
@@ -26,9 +47,15 @@ app: Flask = Flask(__name__)
 app.secret_key = 'MoodCraft AI'  # Change this to a random secret key
 app.permanent_session_lifetime = timedelta(minutes=4)  # Sets the session lifetime
 
+
+
 @app.route('/landing')
 def landing():
     return render_template('landing.html')
+
+@app.route("/chat")
+def chat():
+    return render_template('chat.html')
 
 @app.route('/')
 def index():
@@ -121,6 +148,57 @@ def update_canvas():
 
     # Instead of returning a JSON message, render an HTML template
     return render_template('update_canvas_success.html', device_id=device_id, image_id=image_id)
+
+
+@app.post("/get_response")
+def chat_response():  # If you're using standard Flask, this should not be async
+    data = request.get_json()  # Get data from request body
+    if not data or 'sentence' not in data:
+        raise HTTPException(status_code=400, detail="Empty sentence provided.")
+
+    sentence = data['sentence']
+    try:
+        # Assuming clean_up_sentence is a function that processes the sentence
+        cleaned_sentence = clean_up_sentence(sentence)
+        # Assuming get_response is a function that generates a response based on the cleaned sentence
+        response = get_response(' '.join(cleaned_sentence))  # Example of how you might use the cleaned sentence
+        return {"response": response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+def clean_up_sentence(sentence):
+    sentence_words = word_tokenize(sentence)
+    sentence_words = [lemmatizer.lemmatize(word.lower()) for word in sentence_words]
+    return sentence_words
+
+def bag_of_words(sentence):
+    sentence_words = clean_up_sentence(sentence)
+    bag = [0] * len(words)
+    for s in sentence_words:
+        for i, w in enumerate(words):
+            if w == s:
+                bag[i] = 1
+    return np.array(bag)
+
+def predict_class(sentence):
+    p = bag_of_words(sentence)
+    res = model.predict(np.array([p]))[0]
+    ERROR_THRESHOLD = 0.25
+    results = [[i, r] for i, r in enumerate(res) if r > ERROR_THRESHOLD]
+    results.sort(key=lambda x: x[1], reverse=True)
+    return_list = []
+    for r in results:
+        return_list.append({"intent": classes[r[0]], "probability": str(r[1])})
+    return return_list
+
+def get_response(sentence):
+    intent = predict_class(sentence)[0]['intent']
+    for i in intents['intents']:
+        if i['tag'] == intent:
+            result = random.choice(i['responses'])
+            break
+    return result
+
 
 
 if __name__ == '__main__':   

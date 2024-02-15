@@ -1,0 +1,119 @@
+{
+    "intents": [
+        {
+            "tag": "greeting",
+            "patterns": [
+                "Hi",
+                "How are you",
+                "Is anyone there?",
+                "Hello",
+                "Good day",
+                "Whats up",
+                "Hey",
+                "greetings"
+            ],
+            "responses": [
+                "Hello!",
+                "Good to see you again!",
+                "Hi there, how can I help?"
+            ],
+            "context_set": ""
+        },
+        {
+            "tag": "goodbye",
+            "patterns": [
+                "cya",
+                "See you later",
+                "Goodbye",
+                "I am Leaving",
+                "Have a Good day",
+                "bye",
+                "cao",
+                "see ya"
+            ],
+            "responses": [
+                "Sad to see you go :(",
+                "Talk to you later",
+                "Goodbye!"
+            ],
+            "context_set": ""
+        },
+        {
+            "tag": "Introduction",
+            "patterns": [
+                "What is MoodCraft?",
+                "Tell me about the MoodCraft project",
+                "How does MoodCraft combine AI and art?"
+            ],
+            "responses": [
+                "MoodCraft is a pioneering project aimed at bridging the gap between AI-generated art and human emotions to enhance productivity and well-being in work environments."
+            ]
+        },
+        {
+            "tag": "EmotionDetection",
+            "patterns": [
+                "How does MoodCraft detect emotions?",
+                "What technology does MoodCraft use for emotion detection?",
+                "Can MoodCraft understand my feelings?"
+            ],
+            "responses": [
+                "MoodCraft uses advanced emotion detection technology, leveraging AI to analyze facial expressions and create art that reflects the user's emotional state, enhancing connection and productivity."
+            ]
+        },
+        {
+            "tag": "ImpactOnProductivity",
+            "patterns": [
+                "How does AI-generated art impact productivity?",
+                "Can MoodCraft's art really improve my work environment?",
+                "Is there evidence that MoodCraft enhances satisfaction?"
+            ],
+            "responses": [
+                "Studies indicate that AI-generated art, like that created by MoodCraft, can foster a more positive work environment, reduce burnout, and significantly boost productivity and worker satisfaction."
+            ]
+        },
+        {
+            "tag": "CreativePotential",
+            "patterns": [
+                "How does MoodCraft leverage AI's creative potential?",
+                "Can AI really be creative in art making?",
+                "What makes MoodCraft's art unique?"
+            ],
+            "responses": [
+                "MoodCraft harnesses AI's creative potential by generating art that not only mimics human creativity but also incorporates users' emotions, offering a unique blend of technology and human-like creativity."
+            ]
+        },
+        {
+            "tag": "CollaborativeArt",
+            "patterns": [
+                "Can I collaborate on art projects with MoodCraft?",
+                "Does MoodCraft support collaborative art creation?",
+                "How to engage in group art projects with MoodCraft?"
+            ],
+            "responses": [
+                "MoodCraft encourages collaboration by allowing users to participate in group art projects, fostering community engagement and shared emotional experiences through art."
+            ]
+        },
+        {
+            "tag": "EthicalConsiderations",
+            "patterns": [
+                "What are the ethical considerations of MoodCraft?",
+                "How does MoodCraft handle privacy and ethics?",
+                "Is emotion detection by MoodCraft ethically used?"
+            ],
+            "responses": [
+                "MoodCraft is committed to ethical practices, ensuring user privacy and data protection while using emotion detection technology responsibly to enhance user experience without compromising ethical standards."
+            ]
+        },
+        {
+            "tag": "FutureDirections",
+            "patterns": [
+                "What are the future directions for MoodCraft?",
+                "How will MoodCraft evolve?",
+                "What new features can we expect from MoodCraft?"
+            ],
+            "responses": [
+                "MoodCraft aims to continuously evolve, exploring new ways to enhance the emotional connection through AI art, improve user engagement, and expand its impact on productivity and mental health."
+            ]
+        }
+    ]
+}
