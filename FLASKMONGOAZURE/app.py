@@ -22,7 +22,6 @@ from fastapi.responses import JSONResponse
 from typing import Optional
 from fastapi.responses import HTMLResponse
 import json
-from pydantic import BaseModel
 
 
 lemmatizer = WordNetLemmatizer()
