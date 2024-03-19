@@ -16,6 +16,6 @@ jobs:
 
     - name: Install Newman
       run: npm install -g newman
-    - name: Run Postman Tests against Azure-hosted app
-    run: newman run ./FLASKMONGOAZURE/MoodCraft\ AI\MoodCraft.postman_collection.json
 
+    - name: Run Postman Tests against Azure-hosted app
+      run: newman run ./FLASKMONGOAZURE/MoodCraft\ AI\ Dashboard.postman_collection.json
