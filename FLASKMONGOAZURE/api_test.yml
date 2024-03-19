@@ -1,0 +1,21 @@
+name: API Tests with Newman
+
+on: [push, pull_request]
+
+jobs:
+  test_api:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install Newman
+      run: npm install -g newman
+
+    - name: Run Postman Tests against Azure-hosted app
+      run: newman run ./path/to/your/MoodCraft\ AI\ Dashboard.postman_collection.json --env-var base_url=<your-azure-app-url>
