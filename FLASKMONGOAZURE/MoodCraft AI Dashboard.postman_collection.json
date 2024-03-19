@@ -1,0 +1,487 @@
+{
+	"info": {
+		"_postman_id": "425f9166-f292-4a35-816a-3bfd3985304a",
+		"name": "MoodCraft AI Dashboard",
+		"description": "# 🚀 Get started here\n\nThis template guides you through CRUD operations (GET, POST, PUT, DELETE), variables, and tests.\n\n## 🔖 **How to use this template**\n\n#### **Step 1: Send requests**\n\nRESTful APIs allow you to perform CRUD operations using the POST, GET, PUT, and DELETE HTTP methods.\n\nThis collection contains each of these [request](https://learning.postman.com/docs/sending-requests/requests/) types. Open each request and click \"Send\" to see what happens.\n\n#### **Step 2: View responses**\n\nObserve the response tab for status code (200 OK), response time, and size.\n\n#### **Step 3: Send new Body data**\n\nUpdate or add new data in \"Body\" in the POST request. Typically, Body data is also used in PUT request.\n\n```\n{\n    \"name\": \"Add your name in the body\"\n}\n\n ```\n\n#### **Step 4: Update the variable**\n\nVariables enable you to store and reuse values in Postman. We have created a [variable](https://learning.postman.com/docs/sending-requests/variables/) called `base_url` with the sample request [https://postman-api-learner.glitch.me](https://postman-api-learner.glitch.me). Replace it with your API endpoint to customize this collection.\n\n#### **Step 5: Add tests in the \"Tests\" tab**\n\nTests help you confirm that your API is working as expected. You can write test scripts in JavaScript and view the output in the \"Test Results\" tab.\n\n<img src=\"https://content.pstmn.io/b5f280a7-4b09-48ec-857f-0a7ed99d7ef8/U2NyZWVuc2hvdCAyMDIzLTAzLTI3IGF0IDkuNDcuMjggUE0ucG5n\">\n\n## 💪 Pro tips\n\n- Use folders to group related requests and organize the collection.\n- Add more [scripts](https://learning.postman.com/docs/writing-scripts/intro-to-scripts/) in \"Tests\" to verify if the API works as expected and execute workflows.\n    \n\n## 💡Related templates\n\n[API testing basics](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9a37a28-055b-49cd-8c7e-97494a21eb54&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[API documentation](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9c28f47-1253-44af-a2f3-20dce4da1f18&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[Authorization methods](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=31a9a6ed-4cdf-4ced-984c-d12c9aec1c27&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18522759"
+	},
+	"item": [
+		{
+			"name": "/",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test script for checking if the status code is 200\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Test script for checking if the response contains the welcome message\r",
+							"pm.test(\"Response contains welcome message\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"Welcome to MoodCraft AI\");\r",
+							"});\r",
+							"\r",
+							"// Test script for checking if the response contains the form for submitting prompts\r",
+							"pm.test(\"Response contains prompt form\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"<form id=\\\"moodcraftForm\\\"\");\r",
+							"});\r",
+							"\r",
+							"// Test script for checking if the response contains the footer\r",
+							"pm.test(\"Response contains footer\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"<footer class=\\\"footer\\\"\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Content-Type is text/html\", function () {\r",
+							"    pm.response.to.have.header(\"Content-Type\", \"text/html; charset=utf-8\");\r",
+							"});\r",
+							"pm.test(\"Body includes 'Welcome to MoodCraft AI'\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"Welcome to MoodCraft AI\");\r",
+							"});\r",
+							"\r",
+							"\r",
+							"// You can add more test scripts as needed to verify specific elements or content on the landing page.\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io/",
+					"protocol": "https",
+					"host": [
+						"moodcraftai",
+						"salmonbay-ea017e6c",
+						"ukwest",
+						"azurecontainerapps",
+						"io"
+					],
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/landing",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test script for checking if the status code is 200\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// Test script for checking if the response contains the welcome message\r",
+							"pm.test(\"Response contains welcome message\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"Welcome to MoodCraft AI\");\r",
+							"});\r",
+							"\r",
+							"// Test script for checking if the response contains the About Us section\r",
+							"pm.test(\"Response contains About Us section\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"<h2 class=\\\"text-3xl font-bold mb-5\\\">About Us</h2>\");\r",
+							"});\r",
+							"\r",
+							"// Test script for checking if the response contains the Our Team section\r",
+							"pm.test(\"Response contains Our Team section\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"<h2 class=\\\"text-3xl font-bold\\\">Our Team</h2>\");\r",
+							"});\r",
+							"\r",
+							"// You can add more test scripts as needed to verify specific elements or content on the landing page.\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io/landing",
+					"protocol": "https",
+					"host": [
+						"moodcraftai",
+						"salmonbay-ea017e6c",
+						"ukwest",
+						"azurecontainerapps",
+						"io"
+					],
+					"path": [
+						"landing"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/confirmation/<prompt>",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"pm.test(\"Content-Type is text/html\", function () {\r",
+							"    pm.response.to.have.header(\"Content-Type\", \"text/html; charset=utf-8\");\r",
+							"});\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io//confirmation/prompts",
+					"protocol": "https",
+					"host": [
+						"moodcraftai",
+						"salmonbay-ea017e6c",
+						"ukwest",
+						"azurecontainerapps",
+						"io"
+					],
+					"path": [
+						"",
+						"confirmation",
+						"prompts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/confirmation 404",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"pm.test(\"Content-Type is text/html\", function () {\r",
+							"    pm.response.to.have.header(\"Content-Type\", \"text/html; charset=utf-8\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Status code is 302 or 200\", function () {\r",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 302]);\r",
+							"});\r",
+							"pm.test(\"Body includes confirmation of prompt submission\", function () {\r",
+							"    // This test assumes the response includes some confirmation text or redirects to a confirmation page\r",
+							"    pm.expect(pm.response.text()).to.include(\"Prompt Added Successfully\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io//confirmation/prompts",
+					"protocol": "https",
+					"host": [
+						"moodcraftai",
+						"salmonbay-ea017e6c",
+						"ukwest",
+						"azurecontainerapps",
+						"io"
+					],
+					"path": [
+						"",
+						"confirmation",
+						"prompts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/prompts",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io/prompts",
+					"protocol": "https",
+					"host": [
+						"moodcraftai",
+						"salmonbay-ea017e6c",
+						"ukwest",
+						"azurecontainerapps",
+						"io"
+					],
+					"path": [
+						"prompts"
+					]
+				},
+				"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+			},
+			"response": []
+		},
+		{
+			"name": "/chat",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"pm.test(\"Content-Type is text/html\", function () {\r",
+							"    pm.response.to.have.header(\"Content-Type\", \"text/html; charset=utf-8\");\r",
+							"});\r",
+							"pm.test(\"Body includes 'MoodCraft ChatBot'\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"MoodCraft ChatBot\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io/chat",
+					"protocol": "https",
+					"host": [
+						"moodcraftai",
+						"salmonbay-ea017e6c",
+						"ukwest",
+						"azurecontainerapps",
+						"io"
+					],
+					"path": [
+						"chat"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/image/<ID>",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 or 404\", function () {\r",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);\r",
+							"});\r",
+							"pm.test(\"Content-Type is image/png or image/jpeg\", function () {\r",
+							"    pm.expect(pm.response.headers.get('Content-Type')).to.be.oneOf([\"image/png\", \"image/jpeg\"]);\r",
+							"});\r",
+							"// This test is valid if the status code is 200\r",
+							"pm.test(\"Image is accessible\", function () {\r",
+							"    if(pm.response.code === 200) {\r",
+							"        // Further image validation can be done here\r",
+							"        pm.expect(pm.response).to.have.header(\"Content-Length\");\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io/image/65f336db9d90f198f0937346",
+					"protocol": "https",
+					"host": [
+						"moodcraftai",
+						"salmonbay-ea017e6c",
+						"ukwest",
+						"azurecontainerapps",
+						"io"
+					],
+					"path": [
+						"image",
+						"65f336db9d90f198f0937346"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/update_canvas",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"pm.test(\"Body includes update confirmation\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"Your canvas has been successfully updated.\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "deviceId",
+							"value": "12345abcde",
+							"type": "text"
+						},
+						{
+							"key": "imageId",
+							"value": "img001xyz",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io/update_canvas",
+					"protocol": "https",
+					"host": [
+						"moodcraftai",
+						"salmonbay-ea017e6c",
+						"ukwest",
+						"azurecontainerapps",
+						"io"
+					],
+					"path": [
+						"update_canvas"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/get_response",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"pm.test(\"Response includes chatbot reply\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData).to.have.property(\"response\");\r",
+							"    pm.expect(jsonData.response).to.not.be.empty;\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"sentence\": \"Hello, how are you?\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://moodcraftai.salmonbay-ea017e6c.ukwest.azurecontainerapps.io/get_response",
+					"protocol": "https",
+					"host": [
+						"moodcraftai",
+						"salmonbay-ea017e6c",
+						"ukwest",
+						"azurecontainerapps",
+						"io"
+					],
+					"path": [
+						"get_response"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "id",
+			"value": "1"
+		},
+		{
+			"key": "base_url",
+			"value": "https://postman-rest-api-learner.glitch.me/"
+		}
+	]
+}
