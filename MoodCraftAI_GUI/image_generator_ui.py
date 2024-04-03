@@ -41,7 +41,7 @@ mongo_client: MongoClient = MongoClient(
     "mongodb+srv://MoodCraftAi:MoodCraftAi@moodcraftai.uygfyac.mongodb.net/?retryWrites=true&w=majority")
 database: Database = mongo_client.get_database("moodCraftAI")
 collection: Collection = database.get_collection("settings")
-dalle_e_api_key = "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"
+dalle_e_api_key = ""
 
 
 class ImageGeneratorUI(customtkinter.CTk):
