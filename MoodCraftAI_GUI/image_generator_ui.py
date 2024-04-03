@@ -38,7 +38,7 @@ document_id_to_update = None
 global device_id
 device_id = None
 mongo_client: MongoClient = MongoClient(
-    "mongodb+srv://MoodCraftAi:MoodCraftAi@moodcraftai.uygfyac.mongodb.net/?retryWrites=true&w=majority")
+    "")
 database: Database = mongo_client.get_database("moodCraftAI")
 collection: Collection = database.get_collection("settings")
 dalle_e_api_key = ""
